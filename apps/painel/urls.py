@@ -12,6 +12,7 @@ urlpatterns = [
     path("os/<int:pk>/pagamento/", views.os_pagamento_admin, name="os_pagamento"),
     path("unidades/", views.unidades_admin, name="unidades"),
     path("unidades/<int:pk>/toggle-capacidade/", views.unidade_toggle_capacidade, name="unidade_toggle_capacidade"),
+    path("unidades/<int:pk>/editar/", views.unidade_editar, name="unidade_editar"),
     path("servicos/", views.servicos_admin, name="servicos"),
     path("servicos/<int:pk>/toggle-ativo/", views.servico_toggle_ativo, name="servico_toggle_ativo"),
     path("clientes/", views.clientes_admin, name="clientes"),

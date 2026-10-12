@@ -65,22 +65,22 @@ class Command(BaseCommand):
 
         # 4. Unidades
         u1, _ = Unidade.objects.get_or_create(
-            nome="Pit Stop Vila Olímpia",
+            nome="Pit Stop • Eldorado",
             defaults={
-                "endereco": "Rua Fradique Coutinho, 123 - Vila Olímpia, SP",
+                "endereco": "Rua Felisberta Francisca de Carvalho, 494 - Eldorado - Contagem - MG",
                 "is_ativa": True,
                 "aceitando_pedidos": True,
             },
         )
         u2, _ = Unidade.objects.get_or_create(
-            nome="Pit Stop Pinheiros",
+            nome="Pit Stop • Alvorada",
             defaults={
-                "endereco": "Av. Rebouças, 1500 - Pinheiros, SP",
+                "endereco": "Av. José Luís da Cunha, 79 - Alvorada - Contagem - MG",
                 "is_ativa": True,
                 "aceitando_pedidos": True,
             },
         )
-        self.stdout.write(self.style.SUCCESS("✔ Unidades cadastradas (Vila Olímpia e Pinheiros)"))
+        self.stdout.write(self.style.SUCCESS("✔ Unidades cadastradas (Eldorado e Alvorada)"))
 
         # 5. Serviços do Catálogo
         servicos_data = [

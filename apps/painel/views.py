@@ -180,6 +180,22 @@ def unidade_toggle_capacidade(request, pk):
 
 
 @admin_required
+def unidade_editar(request, pk):
+    if request.method == "POST":
+        unidade = get_object_or_404(Unidade, pk=pk)
+        nome = request.POST.get("nome", "").strip()
+        endereco = request.POST.get("endereco", "").strip()
+        if nome and endereco:
+            unidade.nome = nome
+            unidade.endereco = endereco
+            unidade.save()
+            messages.success(request, f"Unidade '{unidade.nome}' atualizada com sucesso!")
+        else:
+            messages.error(request, "Nome e endereço são obrigatórios.")
+    return redirect("painel:unidades")
+
+
+@admin_required
 def servicos_admin(request):
     servicos = Servico.objects.all().order_by("ordem_exibicao")
     return render(request, "painel/servicos.html", {"servicos": servicos})

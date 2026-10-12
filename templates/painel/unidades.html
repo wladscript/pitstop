@@ -6,7 +6,7 @@
 {% block content %}
 <div style="margin-bottom: 1.5rem;">
     <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
-        Controle em tempo real de lotação e disponibilidade de cada oficina. O kill-switch bloqueia imediatamente novas ordens.
+        Gerencie os nomes, endereços e o controle em tempo real de lotação de cada oficina.
     </p>
 </div>
 
@@ -32,12 +32,32 @@
                         {{ u.ordens_ativas_count }} OSs
                     </span>
                 </div>
+
+                <!-- Formulário de Edição Rápida (Colapsável) -->
+                <div id="form-edit-{{ u.id }}" style="display: none; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem;">
+                    <form action="{% url 'painel:unidade_editar' u.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label class="form-label" style="font-size: 0.75rem;">Nome da Unidade</label>
+                            <input type="text" name="nome" value="{{ u.nome }}" class="form-control" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label class="form-label" style="font-size: 0.75rem;">Endereço Completo</label>
+                            <input type="text" name="endereco" value="{{ u.endereco }}" class="form-control" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;" required>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit('{{ u.id }}')">Cancelar</button>
+                            <button type="submit" class="btn btn-primary btn-sm">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <div style="padding-top: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-size: 0.8rem; color: var(--text-muted);">
-                    Kill-Switch de Lotação:
-                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit('{{ u.id }}')">
+                    ✏️ Editar Nome / Endereço
+                </button>
+
                 <form action="{% url 'painel:unidade_toggle_capacidade' u.id %}" method="post">
                     {% csrf_token %}
                     {% if u.aceitando_pedidos %}
@@ -54,4 +74,15 @@
         </div>
     {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleEdit(id) {
+    const el = document.getElementById(`form-edit-${id}`);
+    if (el) {
+        el.style.display = el.style.display === "none" ? "block" : "none";
+    }
+}
+</script>
 {% endblock %}
