@@ -1,0 +1,120 @@
+{% extends "base_cliente.html" %}
+
+{% block title %}{{ titulo }} — Pit Stop{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <a href="{% url 'garagem:lista' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">
+        <svg width="16" height="16" stroke="currentColor"><use href="#icon-arrow-left"></use></svg>
+        <span>Voltar para Garagem</span>
+    </a>
+    <h1 style="font-size: 1.5rem; margin-bottom: 0.2rem;">{{ titulo|upper }}</h1>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Informe a placa para preenchimento automático</p>
+</div>
+
+<div class="card" style="padding: 1.5rem;">
+    <form method="post" novalidate id="form-veiculo">
+        {% csrf_token %}
+
+        <!-- Campo Placa com Busca Rápida -->
+        <div class="form-group">
+            <label class="form-label" for="{{ form.placa.id_for_label }}">Placa do Veículo</label>
+            <div style="display: flex; gap: 0.5rem;">
+                <div style="flex: 1;">
+                    {{ form.placa }}
+                </div>
+                <button type="button" id="btn-consultar-placa" class="btn btn-secondary" style="font-size: 0.85rem; white-space: nowrap;">
+                    <span>🔍 Consultar</span>
+                </button>
+            </div>
+            <span class="form-hint">Digite a placa (ex: ABC1D23) e clique em consultar para autocompletar</span>
+            {% if form.placa.errors %}
+                <span class="form-error">{{ form.placa.errors.0 }}</span>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="{{ form.modelo.id_for_label }}">Modelo</label>
+            {{ form.modelo }}
+            {% if form.modelo.errors %}
+                <span class="form-error">{{ form.modelo.errors.0 }}</span>
+            {% endif %}
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label class="form-label" for="{{ form.cor.id_for_label }}">Cor Predominante</label>
+                {{ form.cor }}
+                {% if form.cor.errors %}
+                    <span class="form-error">{{ form.cor.errors.0 }}</span>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="{{ form.ano.id_for_label }}">Ano de Fabricação</label>
+                {{ form.ano }}
+                {% if form.ano.errors %}
+                    <span class="form-error">{{ form.ano.errors.0 }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="{{ form.categoria.id_for_label }}">Porte do Veículo</label>
+            {{ form.categoria }}
+            <span class="form-hint">O porte define a tabela de preços aplicada aos serviços</span>
+            {% if form.categoria.errors %}
+                <span class="form-error">{{ form.categoria.errors.0 }}</span>
+            {% endif %}
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                Salvar Veículo
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const btnConsultar = document.getElementById("btn-consultar-placa");
+    const inputPlaca = document.getElementById("{{ form.placa.id_for_label }}");
+    const inputModelo = document.getElementById("{{ form.modelo.id_for_label }}");
+    const inputCor = document.getElementById("{{ form.cor.id_for_label }}");
+    const inputAno = document.getElementById("{{ form.ano.id_for_label }}");
+    const selectCategoria = document.getElementById("{{ form.categoria.id_for_label }}");
+
+    if (btnConsultar && inputPlaca) {
+        btnConsultar.addEventListener("click", async () => {
+            const placa = inputPlaca.value.trim().replace(/[^A-Za-z0-9]/g, "");
+            if (placa.length < 7) {
+                showToast("Digite uma placa válida com pelo menos 7 caracteres.", "warning");
+                inputPlaca.focus();
+                return;
+            }
+
+            btnConsultar.disabled = true;
+            btnConsultar.innerText = "Consultando...";
+
+            try {
+                const data = await fetchJson(`/garagem/api/placa/${encodeURIComponent(placa)}/`);
+                if (data.modelo && inputModelo) inputModelo.value = data.modelo;
+                if (data.cor && inputCor) inputCor.value = data.cor;
+                if (data.ano && inputAno) inputAno.value = data.ano;
+                if (data.categoria && selectCategoria) selectCategoria.value = data.categoria;
+
+                showToast(`Dados encontrados para ${data.modelo}!`, "success");
+            } catch (err) {
+                showToast(err.message || "Erro ao consultar dados da placa.", "error");
+            } finally {
+                btnConsultar.disabled = false;
+                btnConsultar.innerText = "🔍 Consultar";
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

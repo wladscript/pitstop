@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block layout %}
+<div class="admin-layout">
+    <!-- Sidebar do Painel -->
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <div style="width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: var(--font-display); font-size: 1.25rem; color: #fff;">
+                P
+            </div>
+            <div>
+                <div style="font-family: var(--font-display); font-size: 1.2rem; letter-spacing: 0.05em; color: #fff; line-height: 1;">PIT STOP</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Controle Operacional</div>
+            </div>
+        </div>
+
+        <nav class="admin-nav">
+            <a href="{% url 'painel:kanban' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'kanban' or request.resolver_match.url_name == 'os_detalhe' %}active{% endif %}">
+                <svg width="18" height="18" stroke="currentColor"><use href="#icon-kanban"></use></svg>
+                <span>Kanban de OS</span>
+            </a>
+
+            <a href="{% url 'painel:unidades' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'unidades' %}active{% endif %}">
+                <svg width="18" height="18" stroke="currentColor"><use href="#icon-map-pin"></use></svg>
+                <span>Unidades & Lotação</span>
+            </a>
+
+            <a href="{% url 'painel:servicos' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'servicos' %}active{% endif %}">
+                <svg width="18" height="18" stroke="currentColor"><use href="#icon-wrench"></use></svg>
+                <span>Catálogo de Serviços</span>
+            </a>
+
+            <a href="{% url 'painel:clientes' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'clientes' %}active{% endif %}">
+                <svg width="18" height="18" stroke="currentColor"><use href="#icon-user"></use></svg>
+                <span>Clientes Cadastrados</span>
+            </a>
+        </nav>
+
+        <div style="padding: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.5rem;">
+            <a href="{% url 'garagem:lista' %}" class="btn btn-secondary btn-sm btn-block">
+                <svg width="14" height="14" stroke="currentColor"><use href="#icon-car"></use></svg>
+                <span>Ver Área do Cliente</span>
+            </a>
+
+            <form action="{% url 'accounts:logout' %}" method="post" style="width: 100%;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline btn-sm btn-block" style="color: var(--danger); border-color: var(--danger-border);">
+                    <svg width="14" height="14" stroke="currentColor"><use href="#icon-log-out"></use></svg>
+                    <span>Sair</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <div>
+                {% block topbar_left %}
+                    <h2 style="font-size: 1.25rem; margin: 0;">{% block page_title %}Painel de Controle{% endblock %}</h2>
+                {% endblock %}
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                {% block topbar_actions %}{% endblock %}
+
+                <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--surface-2); padding: 0.4rem 0.75rem; border-radius: var(--radius-full); border: 1px solid var(--border);">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success);"></div>
+                    <span style="font-size: 0.85rem; font-weight: 600;">{{ request.user.nome }}</span>
+                    <span class="badge" style="background: var(--surface-3); font-size: 0.65rem;">ADMIN</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="admin-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,329 @@
+{% extends "base_cliente.html" %}
+
+{% block title %}Novo Pedido — Pit Stop{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="{% url 'ordens:lista' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">
+        <svg width="16" height="16" stroke="currentColor"><use href="#icon-arrow-left"></use></svg>
+        <span>Voltar</span>
+    </a>
+    <h1 style="font-size: 1.5rem; margin-bottom: 0.2rem;">NOVO AGENDAMENTO</h1>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Configure os serviços para seu veículo em 4 passos</p>
+</div>
+
+<!-- Stepper Visual -->
+<div class="stepper">
+    <div class="step-node active" id="step-node-1">1</div>
+    <div class="step-node" id="step-node-2">2</div>
+    <div class="step-node" id="step-node-3">3</div>
+    <div class="step-node" id="step-node-4">4</div>
+</div>
+
+<form method="post" id="form-wizard" novalidate>
+    {% csrf_token %}
+
+    <!-- ETAPA 1: VEÍCULO -->
+    <div class="wizard-step" id="step-1">
+        <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">1. Escolha o Veículo</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">O valor dos serviços varia conforme o porte do carro.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+            {% for v in veiculos %}
+                <label class="card card-hover selectable-card" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <input type="radio" name="veiculo_id" value="{{ v.id }}" data-categoria="{{ v.categoria }}" {% if veiculo_selecionado and veiculo_selecionado.id == v.id or forloop.first %}checked{% endif %} style="accent-color: var(--brand); transform: scale(1.2);">
+                        <div>
+                            <div style="font-family: var(--font-display); font-size: 1.1rem; color: #fff;">{{ v.modelo }}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ v.cor }} • {{ v.placa_display }}</div>
+                        </div>
+                    </div>
+                    <span class="badge" style="background: var(--surface-3); color: var(--text-secondary); font-size: 0.7rem;">
+                        {{ v.categoria }}
+                    </span>
+                </label>
+            {% endfor %}
+        </div>
+
+        <button type="button" class="btn btn-primary btn-block btn-lg" onclick="goToStep(2)">
+            Avançar para Unidade ➔
+        </button>
+    </div>
+
+    <!-- ETAPA 2: UNIDADE -->
+    <div class="wizard-step" id="step-2" style="display: none;">
+        <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">2. Escolha a Unidade</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Selecione onde o serviço será realizado.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+            {% for u in unidades %}
+                <label class="card {% if u.disponivel %}card-hover selectable-card{% else %}opacity-50{% endif %}" style="cursor: {% if u.disponivel %}pointer{% else %}not-allowed; opacity: 0.5;{% endif %}; padding: 1rem;">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                            <input type="radio" name="unidade_id" value="{{ u.id }}" {% if not u.disponivel %}disabled{% elif forloop.first %}checked{% endif %} style="accent-color: var(--brand); transform: scale(1.2); margin-top: 3px;">
+                            <div>
+                                <div style="font-family: var(--font-display); font-size: 1.1rem; color: #fff;">{{ u.nome }}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">{{ u.endereco }}</div>
+                            </div>
+                        </div>
+                        <div>
+                            {% if u.disponivel %}
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.7rem;">Disponível</span>
+                            {% else %}
+                                <span class="badge" style="background: var(--danger-bg); color: var(--danger); font-size: 0.7rem;">Lotada</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </label>
+            {% endfor %}
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="goToStep(1)">Voltar</button>
+            <button type="button" class="btn btn-primary" style="flex: 1;" onclick="goToStep(3)">Avançar para Serviços ➔</button>
+        </div>
+    </div>
+
+    <!-- ETAPA 3: SERVIÇOS -->
+    <div class="wizard-step" id="step-3" style="display: none;">
+        <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">3. Selecione os Serviços</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Valores ajustados para o porte do seu veículo.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;" id="servicos-container">
+            {% for s in servicos %}
+                <label class="card card-hover selectable-card" style="cursor: pointer; padding: 1rem; display: flex; align-items: flex-start; justify-content: space-between;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <input type="checkbox" name="servico_ids" value="{{ s.id }}" data-preco-base="{{ s.preco_base|stringformat:'.2f' }}" onchange="recalcularTotal()" style="accent-color: var(--brand); transform: scale(1.3); margin-top: 4px;">
+                        <div>
+                            <div style="font-family: var(--font-display); font-size: 1.1rem; color: #fff;">{{ s.nome }}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">{{ s.descricao }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">⏱ ~{{ s.duracao_estimada_minutos }} min</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; min-width: 90px;">
+                        <div class="servico-preco-display" data-servico-id="{{ s.id }}" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--brand);">
+                            R$ {{ s.preco_base }}
+                        </div>
+                    </div>
+                </label>
+            {% endfor %}
+        </div>
+
+        <!-- Resumo flutuante do valor nesta etapa -->
+        <div class="card" style="margin-bottom: 1.5rem; background: var(--surface-2); border-color: var(--brand); display: flex; align-items: center; justify-content: space-between; padding: 1rem;">
+            <div>
+                <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Subtotal Estimado</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);" id="servicos-selecionados-count">0 serviços selecionados</div>
+            </div>
+            <div style="font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: #fff;" id="subtotal-display">
+                R$ 0,00
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="goToStep(2)">Voltar</button>
+            <button type="button" class="btn btn-primary" style="flex: 1;" onclick="validarServicosEAvancar()">Avançar para Logística ➔</button>
+        </div>
+    </div>
+
+    <!-- ETAPA 4: LOGÍSTICA & CONFIRMAÇÃO -->
+    <div class="wizard-step" id="step-4" style="display: none;">
+        <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">4. Logística e Finalização</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Como seu veículo chegará até nossa unidade?</p>
+
+        <div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+            <div class="form-group">
+                <label class="form-label">Modalidade de Logística</label>
+                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    <label class="card card-hover selectable-card" style="cursor: pointer; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                        <input type="radio" name="logistica_tipo" value="local" checked onchange="toggleEndereco(false)" style="accent-color: var(--brand);">
+                        <div>
+                            <div style="font-weight: 700; color: #fff; font-size: 0.95rem;">Levar e retirar pessoalmente</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Você entrega e retira na unidade escolhida</div>
+                        </div>
+                    </label>
+
+                    <label class="card card-hover selectable-card" style="cursor: pointer; padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                        <input type="radio" name="logistica_tipo" value="leva_traz" onchange="toggleEndereco(true)" style="accent-color: var(--brand);">
+                        <div>
+                            <div style="font-weight: 700; color: #fff; font-size: 0.95rem;">Serviço Leva e Traz (Pit Stop Express)</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Nossa equipe busca e entrega o carro no seu endereço</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Campos ocultos para os valores de entrada e saída -->
+            <input type="hidden" name="logistica_entrada" id="input_logistica_entrada" value="Entrega no local">
+            <input type="hidden" name="logistica_saida" id="input_logistica_saida" value="Retirada no local">
+
+            <div class="form-group" id="grupo-endereco" style="display: none;">
+                <label class="form-label" for="enderecos">Endereço de Coleta e Entrega</label>
+                <input type="text" name="enderecos" id="enderecos" class="form-control" placeholder="Rua, número, complemento e bairro">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="observacoes">Observações Especiais (opcional)</label>
+                <textarea name="observacoes" id="observacoes" rows="2" class="form-textarea" placeholder="Ex: Cuidado especial com rodas esportivas, etc."></textarea>
+            </div>
+        </div>
+
+        <!-- Resumo Final -->
+        <div class="card" style="margin-bottom: 1.5rem; background: var(--surface-1); border: 2px solid var(--brand); padding: 1.25rem;">
+            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem;">
+                Resumo do Pedido
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);" id="resumo-veiculo">-</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);" id="resumo-unidade">-</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total</div>
+                    <div style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--brand);" id="resumo-total">
+                        R$ 0,00
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="goToStep(3)">Voltar</button>
+            <button type="submit" class="btn btn-primary btn-lg" style="flex: 1;">
+                Confirmar e Gerar Pix ➔
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const servicosData = {{ servicos_json|safe }};
+const veiculosData = {{ veiculos_json|safe }};
+
+const MULTIPLICADORES = {
+    "Pequeno": 1.0,
+    "Médio": 1.3,
+    "Grande": 1.6
+};
+
+let currentStep = 1;
+
+function getCategoriaSelecionada() {
+    const radio = document.querySelector('input[name="veiculo_id"]:checked');
+    if (!radio) return "Médio";
+    return radio.getAttribute("data-categoria") || "Médio";
+}
+
+function recalcularPrecosServicos() {
+    const categoria = getCategoriaSelecionada();
+    const mult = MULTIPLICADORES[categoria] || 1.0;
+
+    servicosData.forEach(s => {
+        const precoCalculado = (s.preco_base * mult).toFixed(2);
+        const el = document.querySelector(`.servico-preco-display[data-servico-id="${s.id}"]`);
+        if (el) {
+            el.innerText = `R$ ${precoCalculado.replace(".", ",")}`;
+        }
+    });
+
+    recalcularTotal();
+}
+
+function recalcularTotal() {
+    const categoria = getCategoriaSelecionada();
+    const mult = MULTIPLICADORES[categoria] || 1.0;
+
+    const checks = document.querySelectorAll('input[name="servico_ids"]:checked');
+    let total = 0;
+
+    checks.forEach(chk => {
+        const servId = parseInt(chk.value);
+        const serv = servicosData.find(s => s.id === servId);
+        if (serv) {
+            total += (serv.preco_base * mult);
+        }
+    });
+
+    const totalFormatado = `R$ ${total.toFixed(2).replace(".", ",")}`;
+    document.getElementById("subtotal-display").innerText = totalFormatado;
+    document.getElementById("resumo-total").innerText = totalFormatado;
+    document.getElementById("servicos-selecionados-count").innerText = `${checks.length} serviço(s) selecionado(s)`;
+}
+
+function goToStep(step) {
+    // Esconde todos os passos
+    for (let i = 1; i <= 4; i++) {
+        const stepEl = document.getElementById(`step-${i}`);
+        const nodeEl = document.getElementById(`step-node-${i}`);
+        if (stepEl) stepEl.style.display = (i === step) ? "block" : "none";
+        if (nodeEl) {
+            nodeEl.classList.remove("active", "completed");
+            if (i === step) nodeEl.classList.add("active");
+            else if (i < step) nodeEl.classList.add("completed");
+        }
+    }
+    currentStep = step;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (step === 3) {
+        recalcularPrecosServicos();
+    } else if (step === 4) {
+        atualizarResumoFinal();
+    }
+}
+
+function validarServicosEAvancar() {
+    const checks = document.querySelectorAll('input[name="servico_ids"]:checked');
+    if (checks.length === 0) {
+        showToast("Selecione pelo menos um serviço para continuar.", "warning");
+        return;
+    }
+    goToStep(4);
+}
+
+function toggleEndereco(isLevaTraz) {
+    const grupo = document.getElementById("grupo-endereco");
+    const entrada = document.getElementById("input_logistica_entrada");
+    const saida = document.getElementById("input_logistica_saida");
+
+    if (isLevaTraz) {
+        grupo.style.display = "block";
+        entrada.value = "Leva e Traz";
+        saida.value = "Leva e Traz";
+    } else {
+        grupo.style.display = "none";
+        entrada.value = "Entrega no local";
+        saida.value = "Retirada no local";
+    }
+}
+
+function atualizarResumoFinal() {
+    const radioV = document.querySelector('input[name="veiculo_id"]:checked');
+    const radioU = document.querySelector('input[name="unidade_id"]:checked');
+
+    if (radioV) {
+        const vId = parseInt(radioV.value);
+        const v = veiculosData.find(x => x.id === vId);
+        if (v) {
+            document.getElementById("resumo-veiculo").innerText = `${v.modelo} (${v.placa})`;
+        }
+    }
+
+    if (radioU) {
+        const cardU = radioU.closest("label");
+        const nomeU = cardU ? cardU.querySelector(".font-display").innerText : "";
+        document.getElementById("resumo-unidade").innerText = nomeU;
+    }
+
+    recalcularTotal();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Monitora mudança de veículo para atualizar os preços dinamicamente
+    const radiosV = document.querySelectorAll('input[name="veiculo_id"]');
+    radiosV.forEach(r => r.addEventListener("change", recalcularPrecosServicos));
+});
+</script>
+{% endblock %}

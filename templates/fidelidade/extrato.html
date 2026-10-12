@@ -1,0 +1,89 @@
+{% extends "base_cliente.html" %}
+
+{% block title %}Programa de Fidelidade — Pit Stop{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.5rem; margin-bottom: 0.2rem;">PROGRAMA DE FIDELIDADE</h1>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Acumule pontos em cada lavagem e troque por benefícios</p>
+</div>
+
+<!-- Card de Saldo e Nível -->
+<div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem; background: radial-gradient(circle at 100% 0%, rgba(255, 215, 0, 0.12) 0%, var(--surface-1) 70%); border-color: rgba(255, 215, 0, 0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em;">
+                Saldo Atual
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 0.4rem;">
+                <span style="font-family: var(--font-display); font-size: 2.8rem; font-weight: 800; color: var(--accent); line-height: 1;">
+                    {{ request.user.pontos_fidelidade }}
+                </span>
+                <span style="color: var(--text-muted); font-weight: 700; font-size: 0.95rem;">pontos</span>
+            </div>
+        </div>
+
+        <span class="badge" style="background: rgba(255, 215, 0, 0.2); color: var(--accent); border-color: rgba(255, 215, 0, 0.4); padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+            NÍVEL {{ nivel|upper }}
+        </span>
+    </div>
+
+    <!-- Barra de Progresso de Nível -->
+    {% if proximo_nivel %}
+        <div style="margin-top: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.4rem;">
+                <span>Progresso para <strong>{{ proximo_nivel }}</strong></span>
+                <span>Faltam <strong>{{ pts_faltantes }} pts</strong></span>
+            </div>
+            <div style="width: 100%; height: 8px; background: var(--surface-3); border-radius: var(--radius-full); overflow: hidden;">
+                <div style="width: {{ porcentagem }}%; height: 100%; background: linear-gradient(90deg, #ffaa00, var(--accent)); border-radius: var(--radius-full); transition: width 0.5s ease;"></div>
+            </div>
+        </div>
+    {% else %}
+        <div style="font-size: 0.8rem; color: var(--accent); font-weight: 600;">
+            🌟 Você atingiu o nível máximo da nossa oficina!
+        </div>
+    {% endif %}
+</div>
+
+<!-- Regra do Programa -->
+<div class="card" style="padding: 1rem; margin-bottom: 1.5rem; background: var(--surface-2); display: flex; align-items: center; gap: 0.75rem;">
+    <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(0, 102, 255, 0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <svg width="18" height="18" stroke="var(--brand)"><use href="#icon-award"></use></svg>
+    </div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
+        Regra automática: <strong>1 ponto para cada R$ 10 pagos</strong>. Seus pontos são creditados no momento em que a ordem de serviço é finalizada.
+    </div>
+</div>
+
+<!-- Extrato de Movimentações -->
+<div>
+    <h2 style="font-size: 1.15rem; margin-bottom: 0.75rem;">Extrato de Lançamentos</h2>
+
+    {% if movimentos %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for m in movimentos %}
+                <div class="card" style="padding: 0.9rem 1rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #34d399; font-weight: 800; font-size: 0.9rem;">
+                            +
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9rem; font-weight: 600; color: #fff;">{{ m.descricao }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ m.created_at|date:"d/m/Y às H:i" }}</div>
+                        </div>
+                    </div>
+
+                    <div style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--accent);">
+                        +{{ m.pontos }} pts
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card" style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.9rem;">
+            Nenhum lançamento no extrato ainda. Conclua uma ordem de serviço para receber seus primeiros pontos!
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

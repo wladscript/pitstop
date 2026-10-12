@@ -1,0 +1,164 @@
+{% extends "base_painel.html" %}
+
+{% block title %}{{ ordem.codigo_formatado }} — Gestão Admin{% endblock %}
+{% block page_title %}Gestão da {{ ordem.codigo_formatado }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <a href="{% url 'painel:kanban' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">
+        <svg width="16" height="16" stroke="currentColor"><use href="#icon-arrow-left"></use></svg>
+        <span>Voltar para o Kanban</span>
+    </a>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start;">
+    <!-- Coluna Esquerda: Dados da OS e Serviços -->
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Card Geral -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <span style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: #fff;">
+                        {{ ordem.codigo_formatado }}
+                    </span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted); margin-left: 0.5rem;">
+                        Aberta em {{ ordem.created_at|date:"d/m/Y às H:i" }}
+                    </span>
+                </div>
+                <div>
+                    {% if ordem.status_pagamento == "Pago" %}
+                        <span class="badge badge-pago">PAGO</span>
+                    {% else %}
+                        <span class="badge badge-pendente">PAGAMENTO PENDENTE</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Cliente</div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">{{ ordem.cliente.nome }}</div>
+                    <div style="font-size: 0.85rem; color: var(--brand);">{{ ordem.cliente.formatted_telefone }}</div>
+                    <div style="font-size: 0.75rem; color: var(--accent); margin-top: 0.2rem;">★ {{ ordem.cliente.pontos_fidelidade }} pontos de fidelidade</div>
+                </div>
+
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Veículo</div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">{{ ordem.veiculo.modelo }} ({{ ordem.veiculo.cor }})</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Placa: {{ ordem.veiculo.placa_display }} • Ano {{ ordem.veiculo.ano }}</div>
+                    <span class="badge" style="background: var(--surface-3); font-size: 0.7rem; margin-top: 0.25rem;">Porte: {{ ordem.veiculo.categoria }}</span>
+                </div>
+            </div>
+
+            <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Unidade e Logística</div>
+                <div style="font-size: 0.95rem; font-weight: 600; color: #fff;">📍 {{ ordem.unidade.nome }}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                    Entrada: <strong>{{ ordem.logistica_entrada }}</strong> | Saída: <strong>{{ ordem.logistica_saida }}</strong>
+                </div>
+                {% if ordem.enderecos %}
+                    <div style="font-size: 0.85rem; color: var(--brand); margin-top: 0.2rem;">
+                        Endereço informado: {{ ordem.enderecos }}
+                    </div>
+                {% endif %}
+                {% if ordem.observacoes %}
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; background: var(--surface-2); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm);">
+                        Obs: {{ ordem.observacoes }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card de Serviços Contratados -->
+        <div class="card">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Serviços Inclusos</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for item in itens %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--surface-2); border-radius: var(--radius-sm);">
+                        <div>
+                            <div style="font-weight: 700; color: #fff;">{{ item.nome_servico }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Serviço profissional</div>
+                        </div>
+                        <div style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: #fff;">
+                            R$ {{ item.preco_aplicado }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.9rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted);">Valor Total Cobrado:</span>
+                <span style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--brand);">
+                    R$ {{ ordem.valor_total }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coluna Direita: Controles e Ações do Admin -->
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- Alterar Status -->
+        <div class="card">
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.75rem;">Status Operacional</h3>
+            <form method="post" action="{% url 'painel:os_atualizar_status' ordem.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <select name="status" class="form-select">
+                        {% for s in status_choices %}
+                            <option value="{{ s }}" {% if ordem.status == s %}selected{% endif %}>
+                                {{ s }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    Atualizar Status
+                </button>
+            </form>
+        </div>
+
+        <!-- Marcar Pagamento -->
+        <div class="card">
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.75rem;">Status de Pagamento</h3>
+            <form method="post" action="{% url 'painel:os_pagamento' ordem.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <select name="status_pagamento" class="form-select">
+                        <option value="Pendente" {% if ordem.status_pagamento == "Pendente" %}selected{% endif %}>Pendente</option>
+                        <option value="Pago" {% if ordem.status_pagamento == "Pago" %}selected{% endif %}>Pago (Confirmado)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-accent btn-block">
+                    Salvar Pagamento
+                </button>
+            </form>
+            <div style="margin-top: 0.75rem; text-align: center;">
+                <a href="{% url 'pagamentos:pix_os' ordem.id %}" target="_blank" style="font-size: 0.8rem; color: var(--brand);">
+                    Ver QR Code Pix do Cliente ↗
+                </a>
+            </div>
+        </div>
+
+        <!-- Override de Preço -->
+        <div class="card">
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem;">Ajuste de Preço Manual</h3>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                {% if ordem.status_pagamento == "Pago" %}
+                    <span style="color: var(--danger);">Bloqueado: Esta ordem já foi paga.</span>
+                {% else %}
+                    Permite conceder desconto ou acréscimo antes do pagamento.
+                {% endif %}
+            </p>
+            <form method="post" action="{% url 'painel:os_override_preco' ordem.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <input type="text" name="valor_total" value="{{ ordem.valor_total }}" class="form-control" {% if ordem.status_pagamento == "Pago" %}disabled{% endif %}>
+                </div>
+                <button type="submit" class="btn btn-secondary btn-block" {% if ordem.status_pagamento == "Pago" %}disabled{% endif %}>
+                    Aplicar Ajuste de Preço
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

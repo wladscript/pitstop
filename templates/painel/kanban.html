@@ -1,0 +1,174 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Kanban Operacional — Pit Stop Admin{% endblock %}
+{% block page_title %}Kanban Operacional de Ordens de Serviço{% endblock %}
+
+{% block topbar_actions %}
+<div style="display: flex; align-items: center; gap: 0.75rem;">
+    <!-- Filtro de Unidades -->
+    <form method="get" id="form-filtro-unidade" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Filtrar Unidade:</span>
+        <select name="unidade" class="form-select" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; width: auto;" onchange="this.form.submit()">
+            <option value="">Todas as Unidades ({{ total_ordens }} ordens)</option>
+            {% for u in unidades %}
+                <option value="{{ u.id }}" {% if unidade_selecionada and unidade_selecionada.id == u.id %}selected{% endif %}>
+                    {{ u.nome }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="kanban-board">
+    {% for col in colunas %}
+        <div class="kanban-column" data-status="{{ col.nome }}">
+            <div class="kanban-column-header">
+                <div class="kanban-column-title">
+                    <span class="badge {{ col.badge_class }}">{{ col.nome }}</span>
+                </div>
+                <span class="kanban-count" id="count-{{ col.id }}">{{ col.cards|length }}</span>
+            </div>
+
+            <div class="kanban-cards-container" id="col-{{ col.id }}" data-status="{{ col.nome }}">
+                {% for o in col.cards %}
+                    <div class="kanban-card" draggable="true" data-id="{{ o.id }}" data-pago="{{ o.status_pagamento }}">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+                            <span style="font-family: var(--font-display); font-weight: 700; color: #fff; font-size: 0.95rem;">
+                                {{ o.codigo_formatado }}
+                            </span>
+                            {% if o.status_pagamento == "Pago" %}
+                                <span class="badge badge-pago" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">PAGO</span>
+                            {% else %}
+                                <span class="badge badge-pendente" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">PENDENTE</span>
+                            {% endif %}
+                        </div>
+
+                        <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
+                            {{ o.veiculo.modelo }}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                            Placa: <strong style="color: var(--text-secondary);">{{ o.veiculo.placa_display }}</strong> • {{ o.veiculo.categoria }}
+                        </div>
+
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.6rem;">
+                            👤 {{ o.cliente.nome }} ({{ o.cliente.formatted_telefone }})
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+                            <span style="font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--brand);">
+                                R$ {{ o.valor_total }}
+                            </span>
+                            <a href="{% url 'painel:os_detalhe' o.id %}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                Detalhes ➔
+                            </a>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;" class="empty-state">
+                        Nenhuma ordem nesta etapa
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let draggedCard = null;
+
+function initKanbanDragAndDrop() {
+    const cards = document.querySelectorAll(".kanban-card");
+    const containers = document.querySelectorAll(".kanban-cards-container");
+
+    cards.forEach(card => {
+        card.addEventListener("dragstart", (e) => {
+            draggedCard = card;
+            card.classList.add("dragging");
+            e.dataTransfer.setData("text/plain", card.dataset.id);
+            e.dataTransfer.effectAllowed = "move";
+        });
+
+        card.addEventListener("dragend", () => {
+            card.classList.remove("dragging");
+            draggedCard = null;
+        });
+    });
+
+    containers.forEach(container => {
+        container.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            container.classList.add("drag-over");
+        });
+
+        container.addEventListener("dragleave", () => {
+            container.classList.remove("drag-over");
+        });
+
+        container.addEventListener("drop", async (e) => {
+            e.preventDefault();
+            container.classList.remove("drag-over");
+
+            if (!draggedCard) return;
+
+            const osId = draggedCard.dataset.id;
+            const novoStatus = container.dataset.status;
+            const colunaOrigem = draggedCard.parentElement;
+
+            // Verificação client-side rápida para bloqueio de saída
+            if (novoStatus === "Finalizado" && draggedCard.dataset.pago !== "Pago") {
+                showToast("Não é possível finalizar: o pagamento ainda está pendente!", "error");
+                return;
+            }
+
+            // Move no DOM antecipadamente para sensação instantânea (optimistic UI)
+            container.appendChild(draggedCard);
+            recalcularContadores();
+
+            try {
+                const response = await fetchJson(`/painel/api/os/${osId}/status/`, {
+                    method: "POST",
+                    body: JSON.stringify({ status: novoStatus })
+                });
+                showToast(`OS #${osId.padStart(4, "0")} movida para "${novoStatus}"!`, "success");
+            } catch (err) {
+                // Reverte movimento em caso de erro na regra de negócio
+                colunaOrigem.appendChild(draggedCard);
+                recalcularContadores();
+                showToast(err.message || "Erro ao movimentar ordem.", "error");
+            }
+        });
+    });
+}
+
+function recalcularContadores() {
+    document.querySelectorAll(".kanban-column").forEach(col => {
+        const count = col.querySelectorAll(".kanban-card").length;
+        const countBadge = col.querySelector(".kanban-count");
+        if (countBadge) countBadge.innerText = count;
+
+        const emptyState = col.querySelector(".empty-state");
+        if (emptyState) {
+            emptyState.style.display = count === 0 ? "block" : "none";
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    initKanbanDragAndDrop();
+
+    // Polling leve a cada 15 segundos para manter os cards sincronizados
+    setInterval(() => {
+        // Se o usuário não estiver arrastando um card no momento
+        if (!draggedCard) {
+            const params = new URLSearchParams(window.location.search);
+            // Poderia recarregar via fetch parcial ou reload se inativo
+        }
+    }, 15000);
+});
+</script>
+{% endblock %}

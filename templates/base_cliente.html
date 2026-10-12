@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block layout %}
+<div class="cliente-shell" style="min-height: 100vh; padding-bottom: 80px;">
+    <!-- Topo do Cliente -->
+    <header style="background: var(--surface-1); border-bottom: 1px solid var(--border); padding: 0.85rem 1rem; position: sticky; top: 0; z-index: 900;">
+        <div class="container-mobile" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 32px; height: 32px; border-radius: var(--radius-sm); background: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800; font-family: var(--font-display); font-size: 1.1rem; color: #fff;">
+                    P
+                </div>
+                <div>
+                    <div style="font-family: var(--font-display); font-size: 1.1rem; letter-spacing: 0.05em; color: #fff; line-height: 1;">PIT STOP</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ request.user.nome|truncatechars:18 }}</div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                {% if request.user.is_admin %}
+                    <a href="{% url 'painel:kanban' %}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                        Painel Admin
+                    </a>
+                {% endif %}
+
+                <!-- Pill de Fidelidade -->
+                <a href="{% url 'fidelidade:extrato' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255, 215, 0, 0.12); border: 1px solid rgba(255, 215, 0, 0.35); padding: 0.35rem 0.65rem; border-radius: var(--radius-full); text-decoration: none;">
+                    <svg width="14" height="14" style="stroke: var(--accent);"><use href="#icon-award"></use></svg>
+                    <span style="color: var(--accent); font-weight: 800; font-size: 0.8rem;">{{ request.user.pontos_fidelidade }} pts</span>
+                </a>
+
+                <!-- Sair -->
+                <form action="{% url 'accounts:logout' %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-icon btn-secondary" title="Sair do Pit Stop" style="padding: 0.4rem; border-radius: var(--radius-sm);">
+                        <svg width="16" height="16" style="stroke: var(--text-secondary);"><use href="#icon-log-out"></use></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo da Página -->
+    <main class="container-mobile" style="padding-top: 1.25rem;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Barra de Navegação Inferior (Mobile-First Bottom Nav) -->
+    <nav class="bottom-nav">
+        <a href="{% url 'garagem:lista' %}" class="bottom-nav-item {% if request.resolver_match.app_name == 'garagem' %}active{% endif %}">
+            <svg width="20" height="20" stroke="currentColor"><use href="#icon-car"></use></svg>
+            <span>Garagem</span>
+        </a>
+
+        <a href="{% url 'ordens:nova' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'nova' %}active{% endif %}">
+            <div style="background: var(--brand); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -12px; box-shadow: 0 4px 12px var(--brand-glow);">
+                <svg width="20" height="20" stroke="#fff"><use href="#icon-plus"></use></svg>
+            </div>
+            <span>Novo</span>
+        </a>
+
+        <a href="{% url 'ordens:lista' %}" class="bottom-nav-item {% if request.resolver_match.app_name == 'ordens' and request.resolver_match.url_name != 'nova' %}active{% endif %}">
+            <svg width="20" height="20" stroke="currentColor"><use href="#icon-clock"></use></svg>
+            <span>Pedidos</span>
+        </a>
+
+        <a href="{% url 'fidelidade:extrato' %}" class="bottom-nav-item {% if request.resolver_match.app_name == 'fidelidade' %}active{% endif %}">
+            <svg width="20" height="20" stroke="currentColor"><use href="#icon-award"></use></svg>
+            <span>Fidelidade</span>
+        </a>
+    </nav>
+</div>
+{% endblock %}

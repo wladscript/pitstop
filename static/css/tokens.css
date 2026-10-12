@@ -1,0 +1,77 @@
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+    /* Cores de Fundo e Superfícies (Dark Theme Premium) */
+    --bg: #0a0a0a;
+    --surface-1: #141414;
+    --surface-2: #1b1b1b;
+    --surface-3: #242424;
+    --surface-hover: #2e2e2e;
+
+    /* Cores de Marca e Acento */
+    --brand: #0066ff;
+    --brand-hover: #267fff;
+    --brand-glow: rgba(0, 102, 255, 0.25);
+    --accent: #ffd700;
+    --accent-hover: #ffe033;
+    --accent-glow: rgba(255, 215, 0, 0.2);
+
+    /* Textos */
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --text-inverse: #0a0a0a;
+
+    /* Bordas e Divisórias */
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --border-brand: rgba(0, 102, 255, 0.4);
+
+    /* Status Operacionais do Pit Stop */
+    --status-nafila-bg: rgba(100, 116, 139, 0.14);
+    --status-nafila-text: #94a3b8;
+    --status-nafila-border: rgba(100, 116, 139, 0.35);
+
+    --status-prep-bg: rgba(245, 158, 11, 0.14);
+    --status-prep-text: #fbbf24;
+    --status-prep-border: rgba(245, 158, 11, 0.35);
+
+    --status-exec-bg: rgba(0, 102, 255, 0.14);
+    --status-exec-text: #60a5fa;
+    --status-exec-border: rgba(0, 102, 255, 0.35);
+
+    --status-pronto-bg: rgba(16, 185, 129, 0.14);
+    --status-pronto-text: #34d399;
+    --status-pronto-border: rgba(16, 185, 129, 0.35);
+
+    --status-final-bg: rgba(34, 197, 94, 0.18);
+    --status-final-text: #86efac;
+    --status-final-border: rgba(34, 197, 94, 0.4);
+
+    /* Feedback */
+    --danger: #ef4444;
+    --danger-bg: rgba(239, 68, 68, 0.12);
+    --danger-border: rgba(239, 68, 68, 0.3);
+    --success: #10b981;
+    --warning: #f59e0b;
+
+    /* Tipografia */
+    --font-sans: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Oswald", -apple-system, sans-serif;
+
+    /* Raios e Espaçamentos */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-full: 9999px;
+
+    /* Sombras e Elevação */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.65);
+    --shadow-glow: 0 0 24px var(--brand-glow);
+
+    /* Transições */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}

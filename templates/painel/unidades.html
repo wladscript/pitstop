@@ -1,0 +1,57 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Unidades e Lotação — Pit Stop Admin{% endblock %}
+{% block page_title %}Unidades & Controle de Capacidade{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+        Controle em tempo real de lotação e disponibilidade de cada oficina. O kill-switch bloqueia imediatamente novas ordens.
+    </p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.25rem;">
+    {% for u in unidades %}
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                    <div>
+                        <h3 style="font-size: 1.2rem; color: #fff; margin-bottom: 0.2rem;">{{ u.nome }}</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">📍 {{ u.endereco }}</p>
+                    </div>
+                    {% if u.aceitando_pedidos %}
+                        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">LIVRE</span>
+                    {% else %}
+                        <span class="badge" style="background: var(--danger-bg); color: var(--danger);">LOTADA</span>
+                    {% endif %}
+                </div>
+
+                <div style="background: var(--surface-2); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Ordens em execução na unidade:</span>
+                    <span style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--brand);">
+                        {{ u.ordens_ativas_count }} OSs
+                    </span>
+                </div>
+            </div>
+
+            <div style="padding-top: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                    Kill-Switch de Lotação:
+                </div>
+                <form action="{% url 'painel:unidade_toggle_capacidade' u.id %}" method="post">
+                    {% csrf_token %}
+                    {% if u.aceitando_pedidos %}
+                        <button type="submit" class="btn btn-danger btn-sm" title="Bloquear novas solicitações">
+                            🔒 Bloquear (Lotada)
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-primary btn-sm" title="Liberar novas solicitações">
+                            🔓 Liberar Entrada
+                        </button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

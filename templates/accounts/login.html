@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Entrar — Pit Stop Estética Automotiva{% endblock %}
+
+{% block layout %}
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem;">
+    <div style="width: 100%; max-width: 420px;">
+        <!-- Logo e Cabeçalho -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: var(--radius-md); background: var(--brand); color: #fff; font-family: var(--font-display); font-size: 2rem; font-weight: 800; margin-bottom: 1rem; box-shadow: 0 4px 20px var(--brand-glow);">
+                P
+            </div>
+            <h1 style="font-size: 2rem; margin-bottom: 0.25rem;">PIT STOP</h1>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Estética Automotiva de Alta Precisão</p>
+        </div>
+
+        <!-- Card de Login -->
+        <div class="card" style="padding: 2rem;">
+            <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem; text-align: center;">Acessar sua Conta</h2>
+
+            {% if form.non_field_errors %}
+                <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+                    {% for error in form.non_field_errors %}
+                        <p style="color: var(--danger); font-size: 0.85rem; margin: 0;">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.telefone.id_for_label }}">Telefone / WhatsApp</label>
+                    {{ form.telefone }}
+                    {% if form.telefone.errors %}
+                        <span class="form-error">{{ form.telefone.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.password.id_for_label }}">Senha de Acesso</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <span class="form-error">{{ form.password.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">
+                    Entrar no Sistema
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+                <p style="font-size: 0.9rem; margin-bottom: 0;">
+                    Ainda não possui conta?
+                    <a href="{% url 'accounts:register' %}" style="font-weight: 700;">Cadastre-se</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Acesso rápido de Demonstração -->
+        <div style="margin-top: 1.5rem; background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; text-align: center;">
+            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 0.75rem;">
+                Acesso Rápido de Testes
+            </p>
+            <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="preencherCredenciais('11999999999', 'admin123')">
+                    🔑 Preencher Admin
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="preencherCredenciais('11988887777', 'demo123')">
+                    🚗 Preencher Cliente Demo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function preencherCredenciais(tel, pass) {
+    const telInput = document.getElementById("{{ form.telefone.id_for_label }}");
+    const passInput = document.getElementById("{{ form.password.id_for_label }}");
+    if (telInput && passInput) {
+        telInput.value = tel;
+        passInput.value = pass;
+        showToast("Credenciais preenchidas!", "info", 2000);
+    }
+}
+</script>
+{% endblock %}

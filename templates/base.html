@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}Pit Stop — Estética Automotiva{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sprite de Ícones SVG SVG -->
+    <div style="display: none;">
+        {% include "components/_icons_sprite.html" %}
+    </div>
+
+    <!-- Mensagens do Django repassadas para o Toast JS -->
+    {% if messages %}
+        <div style="display: none;">
+            {% for message in messages %}
+                <span data-django-message="{{ message }}" data-django-tag="{{ message.tags }}"></span>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Conteúdo Principal -->
+    {% block layout %}{% endblock %}
+
+    <script src="{% static 'js/core/fetch-csrf.js' %}"></script>
+    <script src="{% static 'js/core/toast.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

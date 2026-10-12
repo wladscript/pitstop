@@ -1,0 +1,111 @@
+{% extends "base_cliente.html" %}
+
+{% block title %}Pagamento Pix — {{ ordem.codigo_formatado }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <a href="{% url 'ordens:detalhe' ordem.id %}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">
+        <svg width="16" height="16" stroke="currentColor"><use href="#icon-arrow-left"></use></svg>
+        <span>Voltar para Detalhe da OS</span>
+    </a>
+    <h1 style="font-size: 1.5rem; margin-bottom: 0.2rem;">PAGAMENTO PIX</h1>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Escaneie o QR Code ou use o código Copia e Cola</p>
+</div>
+
+<div class="card" style="padding: 1.5rem; text-align: center; margin-bottom: 1.25rem;">
+    <!-- Valor em Destaque -->
+    <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.25rem;">
+        Valor a Pagar
+    </div>
+    <div style="font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; color: #fff; margin-bottom: 1rem;">
+        R$ {{ ordem.valor_total }}
+    </div>
+
+    <!-- QR Code SVG Nativo (Gerado no Servidor via Segno) -->
+    <div style="background: #ffffff; padding: 1.25rem; border-radius: var(--radius-lg); display: inline-flex; justify-content: center; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); margin-bottom: 1.25rem; max-width: 260px; width: 100%;">
+        <div style="width: 100%; height: auto; display: flex; justify-content: center;">
+            {{ pix.qrcode_svg|safe }}
+        </div>
+    </div>
+
+    <!-- Countdown Timer -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        <svg width="14" height="14" stroke="currentColor"><use href="#icon-clock"></use></svg>
+        <span>Este código expira em: <strong style="color: var(--accent);" id="timer">14:59</strong></span>
+    </div>
+
+    <!-- Botão Copiar Código Pix -->
+    <div style="margin-bottom: 1rem;">
+        <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-copiar-pix" onclick="copiarPix()">
+            <svg width="18" height="18" stroke="#fff"><use href="#icon-copy"></use></svg>
+            <span>Copiar Código Pix (Copia e Cola)</span>
+        </button>
+    </div>
+
+    <input type="hidden" id="input-pix-payload" value="{{ pix.copia_e_cola }}">
+
+    <!-- Dados do Recebedor -->
+    <div style="padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); text-align: left; display: flex; flex-direction: column; gap: 0.25rem;">
+        <div>Recebedor: <strong style="color: var(--text-secondary);">{{ pix.recebedor }}</strong></div>
+        <div>Cidade: <strong style="color: var(--text-secondary);">{{ pix.cidade }}</strong></div>
+        <div>Identificador (TXID): <strong style="color: var(--text-secondary);">{{ pix.txid }}</strong></div>
+    </div>
+</div>
+
+<div class="card" style="padding: 1rem; display: flex; align-items: center; gap: 0.75rem; background: var(--surface-2);">
+    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--brand); animation: pulse 2s infinite;"></div>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+        Após realizar a transferência no seu banco, o pagamento será validado pelo operador no painel do lava rápido.
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.2); }
+}
+</style>
+<script>
+function copiarPix() {
+    const payload = document.getElementById("input-pix-payload").value;
+    navigator.clipboard.writeText(payload).then(() => {
+        showToast("Código Pix copiado para a área de transferência!", "success");
+        const btn = document.getElementById("btn-copiar-pix");
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<span>✔ Copiado com Sucesso!</span>`;
+        setTimeout(() => { btn.innerHTML = originalText; }, 2500);
+    }).catch(() => {
+        showToast("Erro ao copiar. Selecione o código manualmente.", "error");
+    });
+}
+
+// Timer regressivo de 15 minutos
+let timeLeft = 15 * 60;
+const timerEl = document.getElementById("timer");
+setInterval(() => {
+    if (timeLeft <= 0) {
+        timerEl.innerText = "Expirado";
+        return;
+    }
+    timeLeft--;
+    const mins = Math.floor(timeLeft / 60);
+    const secs = timeLeft % 60;
+    timerEl.innerText = `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+}, 1000);
+
+// Polling para redirecionar quando marcado como pago
+setInterval(async () => {
+    try {
+        const data = await fetchJson("{% url 'ordens:status_api' ordem.id %}");
+        if (data.status_pagamento === "Pago") {
+            showToast("Pagamento aprovado! Redirecionando...", "success");
+            setTimeout(() => {
+                window.location.href = "{% url 'ordens:detalhe' ordem.id %}";
+            }, 1000);
+        }
+    } catch (e) {}
+}, 5000);
+</script>
+{% endblock %}

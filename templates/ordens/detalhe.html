@@ -1,0 +1,185 @@
+{% extends "base_cliente.html" %}
+
+{% block title %}Detalhe da {{ ordem.codigo_formatado }} — Pit Stop{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+    <a href="{% url 'ordens:lista' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">
+        <svg width="16" height="16" stroke="currentColor"><use href="#icon-arrow-left"></use></svg>
+        <span>Voltar para Pedidos</span>
+    </a>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.2rem;">{{ ordem.codigo_formatado }}</h1>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Aberto em {{ ordem.created_at|date:"d/m/Y às H:i" }}</p>
+        </div>
+        <div id="live-indicator" style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-muted);">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite;"></div>
+            <span>Ao Vivo</span>
+        </div>
+    </div>
+</div>
+
+<!-- Card de Linha do Tempo de Status (Timeline Operacional) -->
+<div class="card" style="padding: 1.5rem; margin-bottom: 1.25rem;">
+    <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 1.25rem; letter-spacing: 0.05em;">
+        Status Operacional
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;" id="timeline-container">
+        {% for step in flow %}
+            <div class="timeline-step" data-step="{{ step }}" style="display: flex; align-items: center; gap: 1rem; position: relative;">
+                <div class="timeline-node" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; border: 2px solid var(--border-strong); background: var(--surface-2); color: var(--text-muted); z-index: 2;">
+                    {{ forloop.counter }}
+                </div>
+                <div style="flex: 1;">
+                    <div class="timeline-title" style="font-family: var(--font-display); font-size: 1.05rem; color: var(--text-secondary);">
+                        {{ step }}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Card de Detalhes do Veículo e Local -->
+<div class="card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Veículo</div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">{{ ordem.veiculo.modelo }} ({{ ordem.veiculo.cor }})</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Placa: {{ ordem.veiculo.placa_display }} • Porte: {{ ordem.veiculo.categoria }}</div>
+        </div>
+    </div>
+
+    <div style="padding-top: 0.75rem; border-top: 1px solid var(--border);">
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Unidade e Logística</div>
+        <div style="font-size: 0.95rem; font-weight: 600; color: #fff;">📍 {{ ordem.unidade.nome }}</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ ordem.unidade.endereco }}</div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+            Entrada: <strong>{{ ordem.logistica_entrada }}</strong> | Saída: <strong>{{ ordem.logistica_saida }}</strong>
+        </div>
+        {% if ordem.enderecos %}
+            <div style="font-size: 0.8rem; color: var(--brand); margin-top: 0.25rem;">
+                Endereço Leva e Traz: {{ ordem.enderecos }}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Card de Serviços e Pagamento -->
+<div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+    <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.75rem;">
+        Serviços Contratados
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem;">
+        {% for item in itens %}
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                <span style="color: var(--text-primary);">{{ item.nome_servico }}</span>
+                <span style="font-family: var(--font-display); font-weight: 700; color: #fff;">R$ {{ item.preco_aplicado }}</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div style="padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Valor Total</div>
+            <div style="font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--brand);" id="valor-total-display">
+                R$ {{ ordem.valor_total }}
+            </div>
+        </div>
+
+        <div id="pagamento-box">
+            {% if ordem.status_pagamento == "Pago" %}
+                <span class="badge badge-pago" style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">
+                    ✔ PAGO COM PIX
+                </span>
+            {% else %}
+                <a href="{% url 'pagamentos:pix_os' ordem.id %}" class="btn btn-accent btn-sm">
+                    <svg width="16" height="16" stroke="currentColor"><use href="#icon-qr"></use></svg>
+                    <span>Pagar via Pix</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.2); }
+}
+</style>
+<script>
+const statusOrdemAtual = "{{ ordem.status }}";
+const statusList = ["Na Fila", "Preparação", "Execução", "Pronto", "Finalizado"];
+
+function atualizarTimeline(currentStatus) {
+    const currentIndex = statusList.indexOf(currentStatus);
+    const steps = document.querySelectorAll(".timeline-step");
+
+    steps.forEach((el, index) => {
+        const node = el.querySelector(".timeline-node");
+        const title = el.querySelector(".timeline-title");
+
+        if (index < currentIndex) {
+            // Concluído
+            node.style.background = "var(--success)";
+            node.style.borderColor = "var(--success)";
+            node.style.color = "#fff";
+            node.innerHTML = "✔";
+            title.style.color = "var(--text-primary)";
+        } else if (index === currentIndex) {
+            // Em andamento atual
+            node.style.background = "var(--brand)";
+            node.style.borderColor = "var(--brand)";
+            node.style.color = "#fff";
+            node.style.boxShadow = "0 0 12px var(--brand-glow)";
+            title.style.color = "#fff";
+            title.style.fontWeight = "800";
+        } else {
+            // Futuro
+            node.style.background = "var(--surface-2)";
+            node.style.borderColor = "var(--border-strong)";
+            node.style.color = "var(--text-muted)";
+            title.style.color = "var(--text-muted)";
+        }
+    });
+}
+
+// Inicializa timeline
+atualizarTimeline(statusOrdemAtual);
+
+// Polling automático leve a cada 7 segundos
+let lastStatus = statusOrdemAtual;
+let lastPagamento = "{{ ordem.status_pagamento }}";
+
+setInterval(async () => {
+    try {
+        const data = await fetchJson("{% url 'ordens:status_api' ordem.id %}");
+        if (data.status && data.status !== lastStatus) {
+            lastStatus = data.status;
+            atualizarTimeline(data.status);
+            showToast(`Status atualizado para "${data.status}"!`, "info");
+        }
+
+        if (data.status_pagamento && data.status_pagamento !== lastPagamento) {
+            lastPagamento = data.status_pagamento;
+            if (data.status_pagamento === "Pago") {
+                document.getElementById("pagamento-box").innerHTML = `
+                    <span class="badge badge-pago" style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">
+                        ✔ PAGO COM PIX
+                    </span>
+                `;
+                showToast("Pagamento confirmado pelo estabelecimento!", "success");
+            }
+        }
+    } catch (e) {
+        // Silencioso em caso de oscilação momentânea
+    }
+}, 7000);
+</script>
+{% endblock %}

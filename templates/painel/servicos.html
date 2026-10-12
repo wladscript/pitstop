@@ -1,0 +1,65 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Catálogo de Serviços — Pit Stop Admin{% endblock %}
+{% block page_title %}Catálogo de Serviços & Tabela Base{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+        Serviços oferecidos aos clientes. O preço base é multiplicado conforme o porte do veículo (Pequeno 1.0x, Médio 1.3x, Grande 1.6x).
+    </p>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+        <thead>
+            <tr style="background: var(--surface-2); border-bottom: 1px solid var(--border);">
+                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">SERVIÇO</th>
+                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">PREÇO BASE</th>
+                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">MÉDIO (1.3x)</th>
+                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">GRANDE (1.6x)</th>
+                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">DURAÇÃO</th>
+                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">STATUS</th>
+                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700; text-align: right;">AÇÃO</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in servicos %}
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 1rem;">
+                        <div style="font-weight: 700; color: #fff;">{{ s.nome }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ s.descricao }}</div>
+                    </td>
+                    <td style="padding: 1rem; font-family: var(--font-display); font-weight: 700; color: #fff;">
+                        R$ {{ s.preco_base }}
+                    </td>
+                    <td style="padding: 1rem; font-family: var(--font-display); color: var(--brand);">
+                        R$ {{ s.preco_base|floatformat:2 }} * 1.3
+                    </td>
+                    <td style="padding: 1rem; font-family: var(--font-display); color: var(--accent);">
+                        R$ {{ s.preco_base|floatformat:2 }} * 1.6
+                    </td>
+                    <td style="padding: 1rem; color: var(--text-secondary);">
+                        ~{{ s.duracao_estimada_minutos }} min
+                    </td>
+                    <td style="padding: 1rem;">
+                        {% if s.is_ativo %}
+                            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">ATIVO</span>
+                        {% else %}
+                            <span class="badge" style="background: var(--surface-3); color: var(--text-muted);">INATIVO</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 1rem; text-align: right;">
+                        <form action="{% url 'painel:servico_toggle_ativo' s.id %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-secondary btn-sm">
+                                {% if s.is_ativo %}Pausar{% else %}Ativar{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
