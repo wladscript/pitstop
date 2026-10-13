@@ -1,7 +1,7 @@
 {% extends "base_painel.html" %}
 
-{% block title %}{{ ordem.codigo_formatado }} — Gestão Admin{% endblock %}
-{% block page_title %}Gestão da {{ ordem.codigo_formatado }}{% endblock %}
+{% block title %}Placa {{ ordem.veiculo.placa_display }} — Gestão Admin{% endblock %}
+{% block page_title %}Placa {{ ordem.veiculo.placa_display }} — {{ ordem.veiculo.modelo }}{% endblock %}
 
 {% block content %}
 <div style="margin-bottom: 1.25rem;">
@@ -18,11 +18,16 @@
         <div class="card">
             <div class="card-header">
                 <div>
-                    <span style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: #fff;">
-                        {{ ordem.codigo_formatado }}
-                    </span>
-                    <span style="font-size: 0.85rem; color: var(--text-muted); margin-left: 0.5rem;">
-                        Aberta em {{ ordem.created_at|date:"d/m/Y às H:i" }}
+                    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.25rem;">
+                        <span style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: #fff; letter-spacing: 0.05em; background: rgba(255, 255, 255, 0.07); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 0.2rem 0.65rem;">
+                            🚗 {{ ordem.veiculo.placa_display }}
+                        </span>
+                        <span style="font-size: 1.1rem; font-weight: 700; color: #fff;">
+                            {{ ordem.veiculo.modelo }} ({{ ordem.veiculo.cor }})
+                        </span>
+                    </div>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">
+                        {{ ordem.codigo_formatado }} • Aberta em {{ ordem.created_at|date:"d/m/Y às H:i" }}
                     </span>
                 </div>
                 <div>

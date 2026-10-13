@@ -1,91 +1,279 @@
 {% extends "base.html" %}
 
-{% block title %}Entrar — Pit Stop Estética Automotiva{% endblock %}
+{% block title %}Pit Stop — Estética Automotiva{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-section {
+    animation: fadeInAuth 0.25s ease-out;
+}
+@keyframes fadeInAuth {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.btn-back {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+.btn-back:hover {
+    color: var(--text-primary);
+    background: var(--surface-2);
+}
+</style>
+{% endblock %}
 
 {% block layout %}
 <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem;">
-    <div style="width: 100%; max-width: 420px;">
+    <div style="width: 100%; max-width: 440px;">
+
         <!-- Logo e Cabeçalho -->
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: var(--radius-md); background: var(--brand); color: #fff; font-family: var(--font-display); font-size: 2rem; font-weight: 800; margin-bottom: 1rem; box-shadow: 0 4px 20px var(--brand-glow);">
+        <div style="text-align: center; margin-bottom: 1.75rem;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: var(--radius-md); background: var(--brand); color: #fff; font-family: var(--font-display); font-size: 2rem; font-weight: 800; margin-bottom: 0.85rem; box-shadow: 0 4px 20px var(--brand-glow);">
                 P
             </div>
-            <h1 style="font-size: 2rem; margin-bottom: 0.25rem;">PIT STOP</h1>
-            <p style="font-size: 0.9rem; color: var(--text-muted);">Estética Automotiva de Alta Precisão</p>
+            <h1 style="font-size: 2rem; margin-bottom: 0.25rem; letter-spacing: 0.02em;">PIT STOP</h1>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0;">Estética Automotiva de Alta Precisão</p>
         </div>
 
-        <!-- Card de Login -->
+        <!-- Card Principal com as Seções -->
         <div class="card" style="padding: 2rem;">
-            <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem; text-align: center;">Acessar sua Conta</h2>
 
-            {% if form.non_field_errors %}
-                <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
-                    {% for error in form.non_field_errors %}
-                        <p style="color: var(--danger); font-size: 0.85rem; margin: 0;">{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-
-            <form method="post" novalidate>
-                {% csrf_token %}
-
-                <div class="form-group">
-                    <label class="form-label" for="{{ form.telefone.id_for_label }}">Telefone / WhatsApp</label>
-                    {{ form.telefone }}
-                    {% if form.telefone.errors %}
-                        <span class="form-error">{{ form.telefone.errors.0 }}</span>
-                    {% endif %}
+            <!-- ============================================== -->
+            <!-- SEÇÃO 1: PRIMEIRO CONTATO (BOAS-VINDAS / OPÇÕES) -->
+            <!-- ============================================== -->
+            <div id="auth-welcome" class="auth-section" style="{% if initial_mode != 'welcome' %}display: none;{% endif %} text-align: center;">
+                <div style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; background: rgba(0, 102, 255, 0.12); border: 1px solid rgba(0, 102, 255, 0.3); border-radius: 999px; color: var(--brand-hover); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+                    ✨ Plataforma Digital
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="{{ form.password.id_for_label }}">Senha de Acesso</label>
-                    {{ form.password }}
-                    {% if form.password.errors %}
-                        <span class="form-error">{{ form.password.errors.0 }}</span>
-                    {% endif %}
+                <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem; color: #fff;">
+                    Bem-vindo ao Pit Stop
+                </h2>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 1.75rem;">
+                    Acompanhe o cuidado do seu veículo em tempo real, faça agendamentos ágeis e acumule pontos de fidelidade.
+                </p>
+
+                <!-- 2 BOTÕES DE PRIMEIRO CONTATO -->
+                <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                    <button type="button" id="btn-cadastrar-agora" class="btn btn-primary btn-block btn-lg" onclick="showAuthSection('register')" style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; font-weight: 700; font-size: 1rem; padding: 0.95rem 1.25rem; box-shadow: 0 4px 18px var(--brand-glow);">
+                        <span>🚗</span>
+                        <span>Cadastrar agora</span>
+                    </button>
+
+                    <button type="button" id="btn-ja-tenho-cadastro" class="btn btn-secondary btn-block btn-lg" onclick="showAuthSection('login')" style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; font-weight: 600; font-size: 0.95rem; padding: 0.9rem 1.25rem; background: var(--surface-2); border-color: var(--border-strong);">
+                        <span>🔑</span>
+                        <span>Já tenho cadastro</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- SEÇÃO 2: FORMULÁRIO DE LOGIN (JÁ TENHO CADASTRO) -->
+            <!-- ============================================== -->
+            <div id="auth-login" class="auth-section" style="{% if initial_mode != 'login' %}display: none;{% endif %}">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+                    <button type="button" class="btn-back" onclick="showAuthSection('welcome')">
+                        ← Início
+                    </button>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Acessar Conta
+                    </span>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">
-                    Entrar no Sistema
-                </button>
-            </form>
+                <h2 style="font-size: 1.3rem; margin-bottom: 0.25rem; text-align: center;">Já tenho cadastro</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">
+                    Entre com seu telefone e senha de acesso
+                </p>
 
-            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
-                <p style="font-size: 0.9rem; margin-bottom: 0;">
-                    Ainda não possui conta?
-                    <a href="{% url 'accounts:register' %}" style="font-weight: 700;">Cadastre-se</a>
+                {% if login_form.non_field_errors %}
+                    <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+                        {% for error in login_form.non_field_errors %}
+                            <p style="color: var(--danger); font-size: 0.85rem; margin: 0;">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'accounts:login' %}" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="login">
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ login_form.telefone.id_for_label }}">Telefone / WhatsApp</label>
+                        {{ login_form.telefone }}
+                        {% if login_form.telefone.errors %}
+                            <span class="form-error">{{ login_form.telefone.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ login_form.password.id_for_label }}">Senha de Acesso</label>
+                        {{ login_form.password }}
+                        {% if login_form.password.errors %}
+                            <span class="form-error">{{ login_form.password.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">
+                        Entrar no Sistema
+                    </button>
+                </form>
+
+                <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+                    <p style="font-size: 0.88rem; margin-bottom: 0; color: var(--text-secondary);">
+                        Ainda não possui conta?
+                        <a href="javascript:void(0)" onclick="showAuthSection('register')" style="font-weight: 700; color: var(--brand-hover);">
+                            Cadastrar agora
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- SEÇÃO 3: FORMULÁRIO DE REGISTRO (CADASTRAR AGORA) -->
+            <!-- ============================================== -->
+            <div id="auth-register" class="auth-section" style="{% if initial_mode != 'register' %}display: none;{% endif %}">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+                    <button type="button" class="btn-back" onclick="showAuthSection('welcome')">
+                        ← Início
+                    </button>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Novo Cadastro
+                    </span>
+                </div>
+
+                <h2 style="font-size: 1.3rem; margin-bottom: 0.25rem; text-align: center;">Cadastrar agora</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: center;">
+                    Crie sua conta para agendar e acompanhar veículos
+                </p>
+
+                {% if register_form.non_field_errors %}
+                    <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+                        {% for error in register_form.non_field_errors %}
+                            <p style="color: var(--danger); font-size: 0.85rem; margin: 0;">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'accounts:login' %}" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="register">
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ register_form.nome.id_for_label }}">Nome Completo</label>
+                        {{ register_form.nome }}
+                        {% if register_form.nome.errors %}
+                            <span class="form-error">{{ register_form.nome.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ register_form.telefone.id_for_label }}">Telefone / WhatsApp</label>
+                        {{ register_form.telefone }}
+                        <span class="form-hint">Para notificações e acompanhamento dos serviços</span>
+                        {% if register_form.telefone.errors %}
+                            <span class="form-error">{{ register_form.telefone.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ register_form.password.id_for_label }}">Senha de Acesso</label>
+                        {{ register_form.password }}
+                        {% if register_form.password.errors %}
+                            <span class="form-error">{{ register_form.password.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="{{ register_form.password_confirm.id_for_label }}">Confirmar Senha</label>
+                        {{ register_form.password_confirm }}
+                        {% if register_form.password_confirm.errors %}
+                            <span class="form-error">{{ register_form.password_confirm.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">
+                        Criar Minha Conta
+                    </button>
+                </form>
+
+                <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+                    <p style="font-size: 0.88rem; margin-bottom: 0; color: var(--text-secondary);">
+                        Já possui cadastro?
+                        <a href="javascript:void(0)" onclick="showAuthSection('login')" style="font-weight: 700; color: var(--brand-hover);">
+                            Fazer login
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Banner Promocional / Destaque (AD) -->
+        <div style="margin-top: 1.5rem; background: linear-gradient(135deg, rgba(0, 102, 255, 0.12) 0%, rgba(20, 20, 20, 0.9) 100%); border: 1px solid rgba(0, 102, 255, 0.25); border-radius: var(--radius-md); padding: 1.15rem 1.25rem; display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: rgba(0, 102, 255, 0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.35rem; border: 1px solid rgba(0, 102, 255, 0.35);">
+                ⭐
+            </div>
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span style="font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; background: var(--brand); color: #fff; padding: 0.15rem 0.45rem; border-radius: 4px;">NOVO</span>
+                    <strong style="font-size: 0.88rem; color: #fff;">Clube Fidelidade Pit Stop</strong>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.35;">
+                    Acumule pontos em cada serviço e resgate lavagens técnicas e descontos exclusivos.
                 </p>
             </div>
         </div>
 
-        <!-- Acesso rápido de Demonstração -->
-        <div style="margin-top: 1.5rem; background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; text-align: center;">
-            <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 0.75rem;">
-                Acesso Rápido de Testes
-            </p>
-            <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="preencherCredenciais('11999999999', 'admin123')">
-                    🔑 Preencher Admin
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="preencherCredenciais('11988887777', 'demo123')">
-                    🚗 Preencher Cliente Demo
-                </button>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function preencherCredenciais(tel, pass) {
-    const telInput = document.getElementById("{{ form.telefone.id_for_label }}");
-    const passInput = document.getElementById("{{ form.password.id_for_label }}");
-    if (telInput && passInput) {
-        telInput.value = tel;
-        passInput.value = pass;
-        showToast("Credenciais preenchidas!", "info", 2000);
+function showAuthSection(section) {
+    const welcome = document.getElementById('auth-welcome');
+    const login = document.getElementById('auth-login');
+    const register = document.getElementById('auth-register');
+
+    if (welcome) welcome.style.display = 'none';
+    if (login) login.style.display = 'none';
+    if (register) register.style.display = 'none';
+
+    const target = document.getElementById('auth-' + section);
+    if (target) {
+        target.style.display = 'block';
+        if (history.replaceState) {
+            const url = section === 'welcome'
+                ? window.location.pathname
+                : window.location.pathname + '?mode=' + section;
+            history.replaceState(null, '', url);
+        }
     }
 }
+
+// Suporte a hash ou query param inicial se o usuário carregar direto
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    if (mode === 'login' || mode === 'register') {
+        showAuthSection(mode);
+    }
+});
 </script>
 {% endblock %}

@@ -10,23 +10,45 @@ def login_view(request):
             return redirect("painel:kanban")
         return redirect("garagem:lista")
 
+    initial_mode = request.GET.get("mode", "welcome")
+    login_form = LoginForm()
+    register_form = RegisterForm()
+
     if request.method == "POST":
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            messages.success(request, f"Bem-vindo de volta, {user.nome.split()[0]}!")
+        action = request.POST.get("action", "login")
+        if action == "register":
+            register_form = RegisterForm(request.POST)
+            if register_form.is_valid():
+                user = register_form.save()
+                login(request, user)
+                messages.success(request, "Conta criada com sucesso! Cadastre seu primeiro veículo para começar.")
+                return redirect("garagem:novo")
+            initial_mode = "register"
+        else:
+            login_form = LoginForm(request.POST)
+            if login_form.is_valid():
+                user = login_form.get_user()
+                login(request, user)
+                messages.success(request, f"Bem-vindo de volta, {user.nome.split()[0]}!")
 
-            next_url = request.GET.get("next")
-            if next_url:
-                return redirect(next_url)
-            if user.is_admin:
-                return redirect("painel:kanban")
-            return redirect("garagem:lista")
-    else:
-        form = LoginForm()
+                next_url = request.GET.get("next")
+                if next_url:
+                    return redirect(next_url)
+                if user.is_admin:
+                    return redirect("painel:kanban")
+                return redirect("garagem:lista")
+            initial_mode = "login"
 
-    return render(request, "accounts/login.html", {"form": form})
+    return render(
+        request,
+        "accounts/login.html",
+        {
+            "login_form": login_form,
+            "register_form": register_form,
+            "form": login_form,
+            "initial_mode": initial_mode,
+        },
+    )
 
 
 def register_view(request):
@@ -34,16 +56,25 @@ def register_view(request):
         return redirect("garagem:lista")
 
     if request.method == "POST":
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
+        register_form = RegisterForm(request.POST)
+        if register_form.is_valid():
+            user = register_form.save()
             login(request, user)
             messages.success(request, "Conta criada com sucesso! Cadastre seu primeiro veículo para começar.")
             return redirect("garagem:novo")
-    else:
-        form = RegisterForm()
+        login_form = LoginForm()
+        return render(
+            request,
+            "accounts/login.html",
+            {
+                "login_form": login_form,
+                "register_form": register_form,
+                "form": login_form,
+                "initial_mode": "register",
+            },
+        )
 
-    return render(request, "accounts/register.html", {"form": form})
+    return redirect("/auth/login/?mode=register")
 
 
 def logout_view(request):

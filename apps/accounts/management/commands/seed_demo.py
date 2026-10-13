@@ -17,38 +17,39 @@ class Command(BaseCommand):
 
         # 1. Usuário Administrador
         admin_tel = settings.ADMIN_PHONE
-        admin_user, created = User.objects.get_or_create(
-            telefone=admin_tel,
-            defaults={
-                "nome": getattr(settings, "ADMIN_NAME", "Administrador Pit Stop"),
-                "role": "admin",
-                "is_staff": True,
-                "is_superuser": True,
-            },
-        )
-        if created:
-            admin_user.set_password(settings.ADMIN_PASSWORD)
-            admin_user.save()
+        admin_user = User.objects.filter(role="admin").first()
+        if not admin_user:
+            admin_user = User.objects.create_superuser(
+                telefone=admin_tel,
+                nome=getattr(settings, "ADMIN_NAME", "Administrador Pit Stop"),
+                password=settings.ADMIN_PASSWORD,
+            )
             self.stdout.write(self.style.SUCCESS(f"✔ Admin criado: {admin_user.telefone} / {settings.ADMIN_PASSWORD}"))
         else:
-            self.stdout.write(f"ℹ Admin já existia: {admin_user.telefone}")
+            admin_user.telefone = admin_tel
+            admin_user.nome = getattr(settings, "ADMIN_NAME", "Administrador Pit Stop")
+            admin_user.set_password(settings.ADMIN_PASSWORD)
+            admin_user.save()
+            self.stdout.write(f"ℹ Admin atualizado: {admin_user.telefone}")
 
         # 2. Cliente Demo
         demo_tel = settings.DEMO_PHONE
-        demo_user, created = User.objects.get_or_create(
-            telefone=demo_tel,
-            defaults={
-                "nome": getattr(settings, "DEMO_NAME", "Cliente Demonstração"),
-                "role": "cliente",
-                "pontos_fidelidade": 120,
-            },
-        )
-        if created:
-            demo_user.set_password(settings.DEMO_PASSWORD)
-            demo_user.save()
+        demo_user = User.objects.filter(role="cliente").first()
+        if not demo_user:
+            demo_user = User.objects.create_user(
+                telefone=demo_tel,
+                nome=getattr(settings, "DEMO_NAME", "Cliente Demonstração"),
+                password=settings.DEMO_PASSWORD,
+                role="cliente",
+                pontos_fidelidade=120,
+            )
             self.stdout.write(self.style.SUCCESS(f"✔ Cliente Demo criado: {demo_user.telefone} / {settings.DEMO_PASSWORD}"))
         else:
-            self.stdout.write(f"ℹ Cliente Demo já existia: {demo_user.telefone}")
+            demo_user.telefone = demo_tel
+            demo_user.nome = getattr(settings, "DEMO_NAME", "Cliente Demonstração")
+            demo_user.set_password(settings.DEMO_PASSWORD)
+            demo_user.save()
+            self.stdout.write(f"ℹ Cliente Demo atualizado: {demo_user.telefone}")
 
         # 3. Veículos do Cliente Demo
         v1, _ = Veiculo.objects.get_or_create(
@@ -102,6 +103,20 @@ class Command(BaseCommand):
                 },
             )
             servicos_criados.append(serv)
+
+        # Serviço exclusivo de unidade: Lanternagem só existe na Alvorada
+        lanternagem, _ = Servico.objects.get_or_create(
+            nome="Lanternagem",
+            defaults={
+                "descricao": "Reparo de amassados, desempeno e recuperação de lataria",
+                "preco_base": Decimal("250.00"),
+                "duracao_estimada_minutos": 480,
+                "ordem_exibicao": 5,
+                "is_ativo": True,
+            },
+        )
+        lanternagem.unidades.set([u2])
+        servicos_criados.append(lanternagem)
         self.stdout.write(self.style.SUCCESS(f"✔ {len(servicos_criados)} Serviços cadastrados no catálogo"))
 
         # 6. Ordens de Serviço demonstrativas para o Kanban (se o banco estiver vazio de OSs)
@@ -128,7 +143,6 @@ class Command(BaseCommand):
                 enderecos="Av. Faria Lima, 3500",
                 observacoes="Cliente aguarda finalização até às 17h.",
             )
-            mudar_status_ordem(os2, OrdemServico.STATUS_PREPARACAO)
             mudar_status_ordem(os2, OrdemServico.STATUS_EXECUCAO)
 
             # OS 3: Pronto (Pago)
@@ -138,7 +152,6 @@ class Command(BaseCommand):
                 unidade=u1,
                 servico_ids=[servicos_criados[0].id],  # Lavagem Simples
             )
-            mudar_status_ordem(os3, OrdemServico.STATUS_PREPARACAO)
             mudar_status_ordem(os3, OrdemServico.STATUS_EXECUCAO)
             mudar_status_ordem(os3, OrdemServico.STATUS_PRONTO)
             marcar_pagamento_ordem(os3, OrdemServico.PAGAMENTO_PAGO)

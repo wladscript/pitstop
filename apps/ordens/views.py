@@ -26,7 +26,7 @@ def nova_ordem(request):
         return redirect("garagem:novo")
 
     unidades = list(Unidade.objects.filter(is_ativa=True))
-    servicos = list(Servico.objects.filter(is_ativo=True))
+    servicos = list(Servico.objects.filter(is_ativo=True).prefetch_related("unidades"))
 
     # Pré-seleção do veículo via query param se houver
     veiculo_id_param = request.GET.get("veiculo")
@@ -76,6 +76,8 @@ def nova_ordem(request):
             "descricao": s.descricao,
             "preco_base": float(s.preco_base),
             "duracao": s.duracao_estimada_minutos,
+            # Lista vazia = disponível em todas as unidades
+            "unidades": [u.id for u in s.unidades.all()],
         }
         for s in servicos
     ]
@@ -121,10 +123,8 @@ def detalhe_ordem(request, pk):
             "itens": itens,
             "flow": [
                 OrdemServico.STATUS_NA_FILA,
-                OrdemServico.STATUS_PREPARACAO,
                 OrdemServico.STATUS_EXECUCAO,
                 OrdemServico.STATUS_PRONTO,
-                OrdemServico.STATUS_FINALIZADO,
             ],
         },
     )

@@ -8,17 +8,17 @@ from apps.unidades.models import Unidade
 
 class OrdemServico(models.Model):
     STATUS_NA_FILA = "Na Fila"
-    STATUS_PREPARACAO = "Preparação"
     STATUS_EXECUCAO = "Execução"
     STATUS_PRONTO = "Pronto"
+
+    # Constantes legadas para compatibilidade
+    STATUS_PREPARACAO = "Preparação"
     STATUS_FINALIZADO = "Finalizado"
 
     STATUS_CHOICES = (
         (STATUS_NA_FILA, "Na Fila"),
-        (STATUS_PREPARACAO, "Preparação"),
         (STATUS_EXECUCAO, "Execução"),
         (STATUS_PRONTO, "Pronto"),
-        (STATUS_FINALIZADO, "Finalizado"),
     )
 
     PAGAMENTO_PENDENTE = "Pendente"

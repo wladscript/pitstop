@@ -3,53 +3,137 @@
 {% block title %}Catálogo de Serviços — Pit Stop Admin{% endblock %}
 {% block page_title %}Catálogo de Serviços & Tabela Base{% endblock %}
 
+{% block topbar_actions %}
+<button type="button" id="btn-novo-servico" class="btn btn-primary btn-sm" onclick="abrirModalServico()">
+    ＋ Adicionar novo serviço
+</button>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .servico-dialog {
+        width: min(560px, calc(100vw - 2rem));
+        background: var(--surface-1);
+        color: var(--text-primary);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-lg, 16px);
+        padding: 0;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    }
+    .servico-dialog[open] { animation: dialogIn 0.18s ease-out; }
+    .servico-dialog::backdrop { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); }
+    @keyframes dialogIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to { opacity: 1; transform: none; }
+    }
+    .servico-dialog__header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--border);
+    }
+    .servico-dialog__body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem; }
+    .servico-dialog__footer {
+        display: flex; justify-content: flex-end; gap: 0.5rem;
+        padding: 1rem 1.25rem; border-top: 1px solid var(--border); background: var(--surface-2);
+    }
+    .servico-dialog .form-group { margin-bottom: 0; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+    .unidade-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .unidade-chip {
+        display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer;
+        padding: 0.45rem 0.8rem; border-radius: 999px; font-size: 0.85rem;
+        border: 1px solid var(--border-strong); background: var(--surface-2);
+        color: var(--text-secondary); transition: all 0.15s ease; user-select: none;
+    }
+    .unidade-chip:hover { border-color: var(--border-brand); }
+    .unidade-chip input { accent-color: var(--brand); }
+    .unidade-chip:has(input:checked) { border-color: var(--brand); background: var(--brand-glow); color: #fff; }
+    .unidades-wrap.is-disabled .unidade-chips { opacity: 0.35; pointer-events: none; }
+    .toggle-todas {
+        display: flex; align-items: center; gap: 0.6rem; cursor: pointer;
+        padding: 0.7rem 0.85rem; border-radius: var(--radius-md); background: var(--surface-2);
+        border: 1px solid var(--border);
+    }
+    .toggle-todas input { accent-color: var(--brand); transform: scale(1.15); }
+    .tag-unidade {
+        display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+        padding: 0.15rem 0.5rem; border-radius: 999px; margin: 0.1rem 0.2rem 0.1rem 0;
+        background: rgba(255, 215, 0, 0.12); color: var(--accent);
+    }
+    .tag-unidade--todas { background: var(--surface-3); color: var(--text-secondary); }
+    .servicos-table th { padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em; }
+    .servicos-table td { padding: 1rem; vertical-align: top; }
+    .servicos-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    .servicos-table tbody tr:hover { background: var(--surface-2); }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
 {% block content %}
 <div style="margin-bottom: 1.5rem;">
     <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
         Serviços oferecidos aos clientes. O preço base é multiplicado conforme o porte do veículo (Pequeno 1.0x, Médio 1.3x, Grande 1.6x).
+        Cada serviço pode ser listado em todas as unidades ou apenas nas selecionadas.
     </p>
 </div>
 
-<div class="card" style="padding: 0; overflow: hidden;">
-    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+<div class="card" style="padding: 0; overflow-x: auto;">
+    <table class="servicos-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
         <thead>
             <tr style="background: var(--surface-2); border-bottom: 1px solid var(--border);">
-                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">SERVIÇO</th>
-                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">PREÇO BASE</th>
-                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">MÉDIO (1.3x)</th>
-                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">GRANDE (1.6x)</th>
-                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">DURAÇÃO</th>
-                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700;">STATUS</th>
-                <th style="padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700; text-align: right;">AÇÃO</th>
+                <th>SERVIÇO</th>
+                <th>UNIDADES</th>
+                <th>PREÇO BASE</th>
+                <th>MÉDIO (1.3x)</th>
+                <th>GRANDE (1.6x)</th>
+                <th>DURAÇÃO</th>
+                <th>STATUS</th>
+                <th style="text-align: right;">AÇÕES</th>
             </tr>
         </thead>
         <tbody>
             {% for s in servicos %}
-                <tr style="border-bottom: 1px solid var(--border);">
-                    <td style="padding: 1rem;">
+                <tr>
+                    <td>
                         <div style="font-weight: 700; color: #fff;">{{ s.nome }}</div>
                         <div style="font-size: 0.8rem; color: var(--text-muted);">{{ s.descricao }}</div>
                     </td>
-                    <td style="padding: 1rem; font-family: var(--font-display); font-weight: 700; color: #fff;">
+                    <td>
+                        {% for u in s.unidades.all %}
+                            <span class="tag-unidade">{{ u.nome }}</span>
+                        {% empty %}
+                            <span class="tag-unidade tag-unidade--todas">Todas</span>
+                        {% endfor %}
+                    </td>
+                    <td style="font-family: var(--font-display); font-weight: 700; color: #fff; white-space: nowrap;">
                         R$ {{ s.preco_base }}
                     </td>
-                    <td style="padding: 1rem; font-family: var(--font-display); color: var(--brand);">
-                        R$ {{ s.preco_base|floatformat:2 }} * 1.3
+                    <td style="font-family: var(--font-display); color: var(--brand); white-space: nowrap;">
+                        R$ {{ s.preco_medio }}
                     </td>
-                    <td style="padding: 1rem; font-family: var(--font-display); color: var(--accent);">
-                        R$ {{ s.preco_base|floatformat:2 }} * 1.6
+                    <td style="font-family: var(--font-display); color: var(--accent); white-space: nowrap;">
+                        R$ {{ s.preco_grande }}
                     </td>
-                    <td style="padding: 1rem; color: var(--text-secondary);">
+                    <td style="color: var(--text-secondary); white-space: nowrap;">
                         ~{{ s.duracao_estimada_minutos }} min
                     </td>
-                    <td style="padding: 1rem;">
+                    <td>
                         {% if s.is_ativo %}
                             <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">ATIVO</span>
                         {% else %}
                             <span class="badge" style="background: var(--surface-3); color: var(--text-muted);">INATIVO</span>
                         {% endif %}
                     </td>
-                    <td style="padding: 1rem; text-align: right;">
+                    <td style="text-align: right; white-space: nowrap;">
+                        <button type="button" id="btn-editar-servico-{{ s.id }}" class="btn btn-secondary btn-sm"
+                                data-id="{{ s.id }}"
+                                data-nome="{{ s.nome }}"
+                                data-descricao="{{ s.descricao }}"
+                                data-preco="{{ s.preco_base|stringformat:'.2f' }}"
+                                data-duracao="{{ s.duracao_estimada_minutos }}"
+                                data-unidades="{% for u in s.unidades.all %}{{ u.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                onclick="abrirModalServico(this)">
+                            ✏️ Editar
+                        </button>
                         <form action="{% url 'painel:servico_toggle_ativo' s.id %}" method="post" style="display: inline;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-secondary btn-sm">
@@ -58,8 +142,135 @@
                         </form>
                     </td>
                 </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                        Nenhum serviço cadastrado ainda. Clique em <strong>＋ Adicionar novo serviço</strong>.
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Modal Criar / Editar Serviço -->
+<dialog id="modal-servico" class="servico-dialog">
+    <form id="form-servico" method="post" action="{% url 'painel:servico_criar' %}"
+          data-url-criar="{% url 'painel:servico_criar' %}"
+          data-url-editar="{% url 'painel:servico_editar' 0 %}">
+        {% csrf_token %}
+        <div class="servico-dialog__header">
+            <h3 id="modal-servico-titulo" style="font-size: 1.15rem; margin: 0;">Novo serviço</h3>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fecharModalServico()" aria-label="Fechar">✕</button>
+        </div>
+
+        <div class="servico-dialog__body">
+            <div class="form-group">
+                <label class="form-label" for="servico-nome">Nome</label>
+                <input type="text" id="servico-nome" name="nome" class="form-control" maxlength="120" required placeholder="Ex: Lanternagem">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="servico-descricao">Descrição</label>
+                <textarea id="servico-descricao" name="descricao" rows="3" class="form-textarea" placeholder="O que está incluso no serviço"></textarea>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="servico-preco">Preço base (R$)</label>
+                    <input type="number" id="servico-preco" name="preco_base" class="form-control" min="0" step="0.01" required placeholder="0,00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="servico-duracao">Duração estimada (min)</label>
+                    <input type="number" id="servico-duracao" name="duracao_estimada_minutos" class="form-control" min="1" step="1" required value="60">
+                </div>
+            </div>
+
+            <div class="form-group unidades-wrap" id="unidades-wrap">
+                <label class="form-label">Unidades onde o serviço é listado</label>
+                <label class="toggle-todas">
+                    <input type="checkbox" id="servico-todas-unidades" name="todas_unidades" onchange="atualizarEstadoUnidades()" checked>
+                    <span>
+                        <strong style="color: #fff;">Todas as unidades</strong>
+                        <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">Inclui unidades cadastradas no futuro</span>
+                    </span>
+                </label>
+                <div class="unidade-chips">
+                    {% for u in unidades %}
+                        <label class="unidade-chip">
+                            <input type="checkbox" name="unidades" value="{{ u.id }}" id="servico-unidade-{{ u.id }}">
+                            {{ u.nome }}
+                        </label>
+                    {% empty %}
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Nenhuma unidade cadastrada.</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="servico-dialog__footer">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="fecharModalServico()">Cancelar</button>
+            <button type="submit" id="btn-salvar-servico" class="btn btn-primary btn-sm">Salvar serviço</button>
+        </div>
+    </form>
+</dialog>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const modalServico = document.getElementById("modal-servico");
+const formServico = document.getElementById("form-servico");
+
+function atualizarEstadoUnidades() {
+    const todas = document.getElementById("servico-todas-unidades").checked;
+    document.getElementById("unidades-wrap").classList.toggle("is-disabled", todas);
+}
+
+function abrirModalServico(btn) {
+    formServico.reset();
+    const editando = !!btn;
+    const unidadesSel = editando && btn.dataset.unidades ? btn.dataset.unidades.split(",") : [];
+
+    document.getElementById("modal-servico-titulo").innerText = editando ? "Editar serviço" : "Novo serviço";
+    formServico.action = editando
+        ? formServico.dataset.urlEditar.replace("/0/", `/${btn.dataset.id}/`)
+        : formServico.dataset.urlCriar;
+
+    document.getElementById("servico-nome").value = editando ? btn.dataset.nome : "";
+    document.getElementById("servico-descricao").value = editando ? btn.dataset.descricao : "";
+    document.getElementById("servico-preco").value = editando ? btn.dataset.preco : "";
+    document.getElementById("servico-duracao").value = editando ? btn.dataset.duracao : 60;
+
+    document.getElementById("servico-todas-unidades").checked = unidadesSel.length === 0;
+    formServico.querySelectorAll('input[name="unidades"]').forEach(chk => {
+        chk.checked = unidadesSel.includes(chk.value);
+    });
+    atualizarEstadoUnidades();
+
+    modalServico.showModal();
+    document.getElementById("servico-nome").focus();
+}
+
+function fecharModalServico() {
+    modalServico.close();
+}
+
+// Fecha ao clicar fora do conteúdo
+modalServico.addEventListener("click", (e) => {
+    if (e.target === modalServico) fecharModalServico();
+});
+
+formServico.addEventListener("submit", (e) => {
+    const todas = document.getElementById("servico-todas-unidades").checked;
+    const algumaUnidade = formServico.querySelectorAll('input[name="unidades"]:checked').length > 0;
+    if (!todas && !algumaUnidade) {
+        e.preventDefault();
+        if (typeof showToast === "function") {
+            showToast("Selecione ao menos uma unidade ou marque 'Todas as unidades'.", "warning");
+        } else {
+            alert("Selecione ao menos uma unidade ou marque 'Todas as unidades'.");
+        }
+    }
+});
+</script>
 {% endblock %}

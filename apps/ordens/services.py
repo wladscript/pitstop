@@ -10,10 +10,8 @@ from .models import OrdemServico, OrdemServicoItem
 
 STATUS_FLOW = [
     OrdemServico.STATUS_NA_FILA,
-    OrdemServico.STATUS_PREPARACAO,
     OrdemServico.STATUS_EXECUCAO,
     OrdemServico.STATUS_PRONTO,
-    OrdemServico.STATUS_FINALIZADO,
 ]
 
 
@@ -43,9 +41,15 @@ def criar_ordem_servico(
     if not servico_ids:
         raise ValidationError("Selecione pelo menos um serviço para abrir o pedido.")
 
-    servicos = list(Servico.objects.filter(id__in=servico_ids, is_ativo=True))
+    servicos = list(Servico.objects.filter(id__in=servico_ids, is_ativo=True).prefetch_related("unidades"))
     if not servicos:
         raise ValidationError("Nenhum serviço válido foi selecionado.")
+
+    indisponiveis = [s.nome for s in servicos if not s.disponivel_na_unidade(unidade)]
+    if indisponiveis:
+        raise ValidationError(
+            f"Serviço(s) não disponível(is) na unidade {unidade.nome}: {', '.join(indisponiveis)}."
+        )
 
     with transaction.atomic():
         ordem = OrdemServico.objects.create(
@@ -80,21 +84,16 @@ def criar_ordem_servico(
 
 def mudar_status_ordem(ordem: OrdemServico, novo_status: str, usuario=None) -> OrdemServico:
     """
-    Altera o status da OS com validação de regras de transição e bloqueio de saída.
+    Altera o status da OS com validação de regras de transição.
     """
     if novo_status not in STATUS_FLOW:
         raise ValidationError(f"Status '{novo_status}' inválido.")
 
-    # Regra 3: Bloqueio na saída - Não pode Finalizado sem estar Pago
-    if novo_status == OrdemServico.STATUS_FINALIZADO and not ordem.pode_finalizar:
-        raise ValidationError("Não é possível liberar o veículo: o pagamento ainda está pendente.")
-
-    antigo_status = ordem.status
     ordem.status = novo_status
     ordem.save(update_fields=["status", "updated_at"])
 
-    # Dispara crédito de pontos de fidelidade na primeira vez que finaliza
-    if novo_status == OrdemServico.STATUS_FINALIZADO and antigo_status != OrdemServico.STATUS_FINALIZADO:
+    # Dispara crédito de pontos de fidelidade quando a OS chega em Pronto e já está paga
+    if novo_status == OrdemServico.STATUS_PRONTO and ordem.status_pagamento == OrdemServico.PAGAMENTO_PAGO:
         creditar_pontos_os(ordem)
 
     return ordem
@@ -119,10 +118,16 @@ def override_preco_ordem(ordem: OrdemServico, novo_valor: Decimal, usuario=None)
 def marcar_pagamento_ordem(ordem: OrdemServico, novo_status: str, usuario=None) -> OrdemServico:
     """
     Atualiza o status de pagamento (Pendente ou Pago).
+    Se a OS já estiver pronta, credita pontos de fidelidade na confirmação do pagamento.
     """
     if novo_status not in [OrdemServico.PAGAMENTO_PENDENTE, OrdemServico.PAGAMENTO_PAGO]:
         raise ValidationError("Status de pagamento inválido.")
 
     ordem.status_pagamento = novo_status
     ordem.save(update_fields=["status_pagamento", "updated_at"])
+
+    # Se a ordem já estiver em Pronto e o pagamento foi confirmado como Pago, credita fidelidade
+    if novo_status == OrdemServico.PAGAMENTO_PAGO and ordem.status == OrdemServico.STATUS_PRONTO:
+        creditar_pontos_os(ordem)
+
     return ordem

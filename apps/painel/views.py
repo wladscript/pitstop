@@ -1,7 +1,8 @@
 import json
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -39,10 +40,8 @@ def kanban_view(request):
 
     colunas = [
         {"id": "nafila", "nome": OrdemServico.STATUS_NA_FILA, "badge_class": "badge-nafila", "cards": []},
-        {"id": "preparacao", "nome": OrdemServico.STATUS_PREPARACAO, "badge_class": "badge-preparacao", "cards": []},
         {"id": "execucao", "nome": OrdemServico.STATUS_EXECUCAO, "badge_class": "badge-execucao", "cards": []},
         {"id": "pronto", "nome": OrdemServico.STATUS_PRONTO, "badge_class": "badge-pronto", "cards": []},
-        {"id": "finalizado", "nome": OrdemServico.STATUS_FINALIZADO, "badge_class": "badge-finalizado", "cards": []},
     ]
 
     col_map = {col["nome"]: col["cards"] for col in colunas}
@@ -160,7 +159,6 @@ def unidades_admin(request):
             "ordens_servico",
             filter=Q(ordens_servico__status__in=[
                 OrdemServico.STATUS_NA_FILA,
-                OrdemServico.STATUS_PREPARACAO,
                 OrdemServico.STATUS_EXECUCAO,
             ]),
         )
@@ -197,8 +195,90 @@ def unidade_editar(request, pk):
 
 @admin_required
 def servicos_admin(request):
-    servicos = Servico.objects.all().order_by("ordem_exibicao")
-    return render(request, "painel/servicos.html", {"servicos": servicos})
+    servicos = Servico.objects.prefetch_related("unidades").order_by("ordem_exibicao", "nome")
+    unidades = Unidade.objects.all()
+    return render(request, "painel/servicos.html", {"servicos": servicos, "unidades": unidades})
+
+
+def _parse_servico_form(post):
+    """Valida os dados do formulário de serviço. Retorna (dados, erros)."""
+    erros = []
+    nome = post.get("nome", "").strip()
+    descricao = post.get("descricao", "").strip()
+
+    if not nome:
+        erros.append("O nome do serviço é obrigatório.")
+
+    preco_base = None
+    try:
+        preco_base = Decimal(post.get("preco_base", "").replace(",", ".").strip())
+        if preco_base < 0:
+            raise InvalidOperation
+        preco_base = preco_base.quantize(Decimal("0.01"))
+    except (InvalidOperation, ValueError):
+        erros.append("Preço base inválido.")
+
+    duracao = None
+    try:
+        duracao = int(post.get("duracao_estimada_minutos", ""))
+        if duracao <= 0:
+            raise ValueError
+    except ValueError:
+        erros.append("Duração estimada deve ser um número de minutos maior que zero.")
+
+    todas = post.get("todas_unidades") == "on"
+    unidade_ids = []
+    if not todas:
+        unidade_ids = [int(u) for u in post.getlist("unidades") if u.isdigit()]
+        if not unidade_ids:
+            erros.append("Selecione ao menos uma unidade ou marque 'Todas as unidades'.")
+
+    dados = {
+        "nome": nome,
+        "descricao": descricao,
+        "preco_base": preco_base,
+        "duracao_estimada_minutos": duracao,
+        "unidade_ids": unidade_ids,
+    }
+    return dados, erros
+
+
+def _salvar_servico(request, servico=None):
+    dados, erros = _parse_servico_form(request.POST)
+    if erros:
+        for e in erros:
+            messages.error(request, e)
+        return False
+
+    unidade_ids = dados.pop("unidade_ids")
+    with transaction.atomic():
+        if servico is None:
+            ultima_ordem = Servico.objects.order_by("-ordem_exibicao").values_list("ordem_exibicao", flat=True).first() or 0
+            servico = Servico(ordem_exibicao=ultima_ordem + 1)
+        for campo, valor in dados.items():
+            setattr(servico, campo, valor)
+        servico.save()
+        # Lista vazia = disponível em todas as unidades
+        servico.unidades.set(Unidade.objects.filter(id__in=unidade_ids))
+    return servico
+
+
+@admin_required
+def servico_criar(request):
+    if request.method == "POST":
+        servico = _salvar_servico(request)
+        if servico:
+            messages.success(request, f"Serviço '{servico.nome}' adicionado ao catálogo!")
+    return redirect("painel:servicos")
+
+
+@admin_required
+def servico_editar(request, pk):
+    if request.method == "POST":
+        servico = get_object_or_404(Servico, pk=pk)
+        if _salvar_servico(request, servico):
+            messages.success(request, f"Serviço '{servico.nome}' atualizado com sucesso!")
+    return redirect("painel:servicos")
 
 
 @admin_required

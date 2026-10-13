@@ -1,88 +1,195 @@
-{% extends "base_painel.html" %}
-
-{% block title %}Unidades e Lotação — Pit Stop Admin{% endblock %}
-{% block page_title %}Unidades & Controle de Capacidade{% endblock %}
-
-{% block content %}
-<div style="margin-bottom: 1.5rem;">
-    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
-        Gerencie os nomes, endereços e o controle em tempo real de lotação de cada oficina.
-    </p>
+{% extends "base_painel.html" %} {% block title %}Unidades e Lotação — Pit Stop
+Admin{% endblock %} {% block page_title %}Unidades & Controle de Capacidade{%
+endblock %} {% block content %}
+<div style="margin-bottom: 1.5rem">
+  <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0">
+    Gerencie os nomes, endereços e o controle em tempo real de lotação de cada
+    oficina.
+  </p>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.25rem;">
-    {% for u in unidades %}
-        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                    <div>
-                        <h3 style="font-size: 1.2rem; color: #fff; margin-bottom: 0.2rem;">{{ u.nome }}</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">📍 {{ u.endereco }}</p>
-                    </div>
-                    {% if u.aceitando_pedidos %}
-                        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">LIVRE</span>
-                    {% else %}
-                        <span class="badge" style="background: var(--danger-bg); color: var(--danger);">LOTADA</span>
-                    {% endif %}
-                </div>
-
-                <div style="background: var(--surface-2); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.85rem; color: var(--text-muted);">Ordens em execução na unidade:</span>
-                    <span style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--brand);">
-                        {{ u.ordens_ativas_count }} OSs
-                    </span>
-                </div>
-
-                <!-- Formulário de Edição Rápida (Colapsável) -->
-                <div id="form-edit-{{ u.id }}" style="display: none; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem;">
-                    <form action="{% url 'painel:unidade_editar' u.id %}" method="post">
-                        {% csrf_token %}
-                        <div class="form-group" style="margin-bottom: 0.75rem;">
-                            <label class="form-label" style="font-size: 0.75rem;">Nome da Unidade</label>
-                            <input type="text" name="nome" value="{{ u.nome }}" class="form-control" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;" required>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0.75rem;">
-                            <label class="form-label" style="font-size: 0.75rem;">Endereço Completo</label>
-                            <input type="text" name="endereco" value="{{ u.endereco }}" class="form-control" style="font-size: 0.85rem; padding: 0.5rem 0.75rem;" required>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit('{{ u.id }}')">Cancelar</button>
-                            <button type="submit" class="btn btn-primary btn-sm">Salvar Alterações</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <div style="padding-top: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit('{{ u.id }}')">
-                    ✏️ Editar Nome / Endereço
-                </button>
-
-                <form action="{% url 'painel:unidade_toggle_capacidade' u.id %}" method="post">
-                    {% csrf_token %}
-                    {% if u.aceitando_pedidos %}
-                        <button type="submit" class="btn btn-danger btn-sm" title="Bloquear novas solicitações">
-                            🔒 Bloquear (Lotada)
-                        </button>
-                    {% else %}
-                        <button type="submit" class="btn btn-primary btn-sm" title="Liberar novas solicitações">
-                            🔓 Liberar Entrada
-                        </button>
-                    {% endif %}
-                </form>
-            </div>
+<div
+  style="
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.25rem;
+  "
+>
+  {% for u in unidades %}
+  <div
+    class="card"
+    style="
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    "
+  >
+    <div>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 0.75rem;
+        "
+      >
+        <div>
+          <h3 style="font-size: 1.2rem; color: #fff; margin-bottom: 0.2rem">
+            {{ u.nome }}
+          </h3>
+          <p
+            style="font-size: 0.85rem; color: var(--text-secondary); margin: 0"
+          >
+            📍 {{ u.endereco }}
+          </p>
         </div>
-    {% endfor %}
-</div>
-{% endblock %}
+        {% if u.aceitando_pedidos %}
+        <span
+          class="badge"
+          style="background: rgba(16, 185, 129, 0.15); color: #34d399"
+          >LIVRE</span
+        >
+        {% else %}
+        <span
+          class="badge"
+          style="background: var(--danger-bg); color: var(--danger)"
+          >LOTADA</span
+        >
+        {% endif %}
+      </div>
 
-{% block extra_js %}
+      <div
+        style="
+          background: var(--surface-2);
+          padding: 0.85rem;
+          border-radius: var(--radius-md);
+          margin-bottom: 1rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <span style="font-size: 0.85rem; color: var(--text-muted)"
+          >Ordens em execução na unidade:</span
+        >
+        <span
+          style="
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--brand);
+          "
+        >
+          {{ u.ordens_ativas_count }} OSs
+        </span>
+      </div>
+
+      <!-- Formulário de Edição Rápida (Colapsável) -->
+      <div
+        id="form-edit-{{ u.id }}"
+        style="
+          display: none;
+          background: var(--surface-2);
+          border: 1px solid var(--border-strong);
+          border-radius: var(--radius-md);
+          padding: 1rem;
+          margin-bottom: 1rem;
+        "
+      >
+        <form action="{% url 'painel:unidade_editar' u.id %}" method="post">
+          {% csrf_token %}
+          <div class="form-group" style="margin-bottom: 0.75rem">
+            <label class="form-label" style="font-size: 0.75rem"
+              >Nome da Unidade</label
+            >
+            <input
+              type="text"
+              name="nome"
+              value="{{ u.nome }}"
+              class="form-control"
+              style="font-size: 0.85rem; padding: 0.5rem 0.75rem"
+              required
+            />
+          </div>
+          <div class="form-group" style="margin-bottom: 0.75rem">
+            <label class="form-label" style="font-size: 0.75rem"
+              >Endereço Completo</label
+            >
+            <input
+              type="text"
+              name="endereco"
+              value="{{ u.endereco }}"
+              class="form-control"
+              style="font-size: 0.85rem; padding: 0.5rem 0.75rem"
+              required
+            />
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              onclick="toggleEdit('{{ u.id }}')"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm">
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      style="
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      "
+    >
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        onclick="toggleEdit('{{ u.id }}')"
+      >
+        ✏️ Editar Nome / Endereço
+      </button>
+
+      <form
+        action="{% url 'painel:unidade_toggle_capacidade' u.id %}"
+        method="post"
+      >
+        {% csrf_token %} {% if u.aceitando_pedidos %}
+        <button
+          type="submit"
+          class="btn btn-danger btn-sm"
+          title="Bloquear novas solicitações"
+        >
+          🔒 Bloquear (Lotada)
+        </button>
+        {% else %}
+        <button
+          type="submit"
+          class="btn btn-primary btn-sm"
+          title="Liberar novas solicitações"
+        >
+          🔓 Liberar Entrada
+        </button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %} {% block extra_js %}
 <script>
-function toggleEdit(id) {
+  function toggleEdit(id) {
     const el = document.getElementById(`form-edit-${id}`);
     if (el) {
-        el.style.display = el.style.display === "none" ? "block" : "none";
+      el.style.display = el.style.display === "none" ? "block" : "none";
     }
-}
+  }
 </script>
 {% endblock %}

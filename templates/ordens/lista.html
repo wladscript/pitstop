@@ -20,16 +20,16 @@
             <div class="card card-hover" style="display: flex; flex-direction: column; gap: 0.85rem;">
                 <div style="display: flex; align-items: flex-start; justify-content: space-between;">
                     <div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
-                            <span style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: #fff;">
-                                {{ o.codigo_formatado }}
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                            <span style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; color: #fff; letter-spacing: 0.05em; background: rgba(255, 255, 255, 0.07); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 0.15rem 0.5rem;">
+                                🚗 {{ o.veiculo.placa_display }}
                             </span>
                             <span style="font-size: 0.8rem; color: var(--text-muted);">
                                 {{ o.created_at|date:"d/m/Y H:i" }}
                             </span>
                         </div>
-                        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">
-                            {{ o.veiculo.modelo }} <span style="color: var(--text-muted);">({{ o.veiculo.placa_display }})</span>
+                        <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">
+                            {{ o.veiculo.modelo }} <span style="font-size: 0.8rem; color: var(--text-muted);">• {{ o.codigo_formatado }}</span>
                         </div>
                         <div style="font-size: 0.8rem; color: var(--text-secondary);">
                             📍 {{ o.unidade.nome }}

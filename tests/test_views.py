@@ -61,6 +61,25 @@ def servico(db):
 
 @pytest.mark.django_db
 class TestViewsFluxoCompleto:
+    def test_welcome_page_exibe_dois_botoes(self, client):
+        response = client.get(reverse("accounts:login"))
+        assert response.status_code == 200
+        content = response.content.decode("utf-8")
+        assert "Cadastrar agora" in content
+        assert "Já tenho cadastro" in content
+        assert "Clube Fidelidade Pit Stop" in content
+
+    def test_registro_novo_cliente(self, client):
+        response = client.post(reverse("accounts:login"), {
+            "action": "register",
+            "nome": "Marcos Silva",
+            "telefone": "(31) 98765-4321",
+            "password": "senhaforte123",
+            "password_confirm": "senhaforte123",
+        })
+        assert response.status_code == 302
+        assert response.url == reverse("garagem:novo")
+
     def test_login_cliente_redireciona_garagem(self, client, cliente):
         response = client.post(reverse("accounts:login"), {
             "telefone": "11988887777",

@@ -33,10 +33,11 @@
 
             <div class="kanban-cards-container" id="col-{{ col.id }}" data-status="{{ col.nome }}">
                 {% for o in col.cards %}
-                    <div class="kanban-card" draggable="true" data-id="{{ o.id }}" data-pago="{{ o.status_pagamento }}">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
-                            <span style="font-family: var(--font-display); font-weight: 700; color: #fff; font-size: 0.95rem;">
-                                {{ o.codigo_formatado }}
+                    <div class="kanban-card" draggable="true" data-id="{{ o.id }}" data-pago="{{ o.status_pagamento }}" data-status="{{ o.status }}">
+                        <!-- Topo: Placa e Pagamento -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <span style="font-family: var(--font-display); font-weight: 800; color: #fff; font-size: 1.15rem; letter-spacing: 0.05em; background: rgba(255, 255, 255, 0.07); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 0.2rem 0.55rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                🚗 {{ o.veiculo.placa_display }}
                             </span>
                             {% if o.status_pagamento == "Pago" %}
                                 <span class="badge badge-pago" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">PAGO</span>
@@ -45,28 +46,67 @@
                             {% endif %}
                         </div>
 
-                        <div style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem;">
-                            {{ o.veiculo.modelo }}
+                        <!-- Veículo, Porte e Código -->
+                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.15rem;">
+                            {{ o.veiculo.modelo }} <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">({{ o.veiculo.cor }})</span>
                         </div>
                         <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-                            Placa: <strong style="color: var(--text-secondary);">{{ o.veiculo.placa_display }}</strong> • {{ o.veiculo.categoria }}
+                            {{ o.codigo_formatado }} • Porte: <strong style="color: var(--text-secondary);">{{ o.veiculo.categoria }}</strong>
                         </div>
 
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.6rem;">
+                        <!-- Serviços do Pátio (Sem valores financeiros) -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.6rem;">
+                            {% for item in o.itens.all %}
+                                <span class="badge" style="background: var(--surface-2); border: 1px solid var(--border-strong); color: #fff; font-size: 0.72rem; padding: 0.2rem 0.45rem; font-weight: 600;">
+                                    🔧 {{ item.nome_servico }}
+                                </span>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Cliente e Unidade / Logística -->
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
                             👤 {{ o.cliente.nome }} ({{ o.cliente.formatted_telefone }})
                         </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                            📍 {{ o.unidade.nome }} •
+                            {% if o.logistica_saida == "Leva e Traz" %}
+                                <span style="color: var(--accent); font-weight: 600;">🚚 Leva e Traz</span>
+                            {% else %}
+                                <span>Retirada no pátio</span>
+                            {% endif %}
+                        </div>
 
+                        {% if o.observacoes %}
+                            <div style="font-size: 0.72rem; color: var(--text-secondary); background: var(--surface-2); border-left: 2px solid var(--brand); padding: 0.35rem 0.5rem; border-radius: var(--radius-sm); margin-bottom: 0.6rem;">
+                                💬 {{ o.observacoes|truncatechars:65 }}
+                            </div>
+                        {% endif %}
+
+                        <!-- Rodapé do Card: Ação rápida para o pátio + Detalhes (Zero exibição de preços) -->
                         <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.5rem; border-top: 1px solid var(--border);">
-                            <span style="font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--brand);">
-                                R$ {{ o.valor_total }}
-                            </span>
-                            <a href="{% url 'painel:os_detalhe' o.id %}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                            <div>
+                                {% if o.status == "Na Fila" %}
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="moverStatusDireto('{{ o.id }}', 'Execução')" style="font-size: 0.75rem; padding: 0.3rem 0.65rem;" title="Mover para Em Execução">
+                                        ▶ Iniciar
+                                    </button>
+                                {% elif o.status == "Execução" %}
+                                    <button type="button" class="btn btn-sm" onclick="moverStatusDireto('{{ o.id }}', 'Pronto')" style="font-size: 0.75rem; padding: 0.3rem 0.65rem; background: #059669; border: 1px solid #10b981; color: #fff;" title="Mover para Pronto">
+                                        ✔ Concluir
+                                    </button>
+                                {% else %}
+                                    <span style="font-size: 0.75rem; color: #34d399; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                        ✔ Pronto p/ saída
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <a href="{% url 'painel:os_detalhe' o.id %}" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
                                 Detalhes ➔
                             </a>
                         </div>
                     </div>
                 {% empty %}
-                    <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;" class="empty-state">
+                    <div style="padding: 2.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;" class="empty-state">
                         Nenhuma ordem nesta etapa
                     </div>
                 {% endfor %}
@@ -79,6 +119,54 @@
 {% block extra_js %}
 <script>
 let draggedCard = null;
+
+async function moverStatusDireto(osId, novoStatus) {
+    const card = document.querySelector(`.kanban-card[data-id="${osId}"]`);
+    if (!card) return;
+
+    const destinoCol = document.querySelector(`.kanban-column[data-status="${novoStatus}"] .kanban-cards-container`);
+    const colunaOrigem = card.parentElement;
+
+    if (destinoCol) {
+        destinoCol.appendChild(card);
+        card.dataset.status = novoStatus;
+        recalcularContadores();
+        atualizarBotoesCard(card, novoStatus, osId);
+    }
+
+    try {
+        await fetchJson(`/painel/api/os/${osId}/status/`, {
+            method: "POST",
+            body: JSON.stringify({ status: novoStatus })
+        });
+        showToast(`OS #${String(osId).padStart(4, "0")} movida para "${novoStatus}"!`, "success");
+    } catch (err) {
+        if (colunaOrigem) {
+            colunaOrigem.appendChild(card);
+            recalcularContadores();
+        }
+        showToast(err.message || "Erro ao movimentar ordem.", "error");
+    }
+}
+
+function atualizarBotoesCard(card, novoStatus, osId) {
+    const containerAcao = card.querySelector("div[style*='display: flex; justify-content: space-between'] > div:first-child");
+    if (!containerAcao) return;
+
+    if (novoStatus === "Execução") {
+        containerAcao.innerHTML = `
+            <button type="button" class="btn btn-sm" onclick="moverStatusDireto('${osId}', 'Pronto')" style="font-size: 0.75rem; padding: 0.3rem 0.65rem; background: #059669; border: 1px solid #10b981; color: #fff;" title="Mover para Pronto">
+                ✔ Concluir
+            </button>
+        `;
+    } else if (novoStatus === "Pronto") {
+        containerAcao.innerHTML = `
+            <span style="font-size: 0.75rem; color: #34d399; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                ✔ Pronto p/ saída
+            </span>
+        `;
+    }
+}
 
 function initKanbanDragAndDrop() {
     const cards = document.querySelectorAll(".kanban-card");
@@ -119,24 +207,20 @@ function initKanbanDragAndDrop() {
             const novoStatus = container.dataset.status;
             const colunaOrigem = draggedCard.parentElement;
 
-            // Verificação client-side rápida para bloqueio de saída
-            if (novoStatus === "Finalizado" && draggedCard.dataset.pago !== "Pago") {
-                showToast("Não é possível finalizar: o pagamento ainda está pendente!", "error");
-                return;
-            }
-
-            // Move no DOM antecipadamente para sensação instantânea (optimistic UI)
+            // Move no DOM antecipadamente (optimistic UI)
             container.appendChild(draggedCard);
+            draggedCard.dataset.status = novoStatus;
             recalcularContadores();
+            atualizarBotoesCard(draggedCard, novoStatus, osId);
 
             try {
-                const response = await fetchJson(`/painel/api/os/${osId}/status/`, {
+                await fetchJson(`/painel/api/os/${osId}/status/`, {
                     method: "POST",
                     body: JSON.stringify({ status: novoStatus })
                 });
-                showToast(`OS #${osId.padStart(4, "0")} movida para "${novoStatus}"!`, "success");
+                showToast(`OS #${String(osId).padStart(4, "0")} movida para "${novoStatus}"!`, "success");
             } catch (err) {
-                // Reverte movimento em caso de erro na regra de negócio
+                // Reverte movimento em caso de erro
                 colunaOrigem.appendChild(draggedCard);
                 recalcularContadores();
                 showToast(err.message || "Erro ao movimentar ordem.", "error");
@@ -160,15 +244,6 @@ function recalcularContadores() {
 
 document.addEventListener("DOMContentLoaded", () => {
     initKanbanDragAndDrop();
-
-    // Polling leve a cada 15 segundos para manter os cards sincronizados
-    setInterval(() => {
-        // Se o usuário não estiver arrastando um card no momento
-        if (!draggedCard) {
-            const params = new URLSearchParams(window.location.search);
-            // Poderia recarregar via fetch parcial ou reload se inativo
-        }
-    }, 15000);
 });
 </script>
 {% endblock %}
