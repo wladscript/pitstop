@@ -1,10 +1,9 @@
-{% extends "base_painel.html" %} {% block title %}Unidades e Lotação — Pit Stop
-Admin{% endblock %} {% block page_title %}Unidades & Controle de Capacidade{%
-endblock %} {% block content %}
+{% extends "base_painel.html" %} {% block title %}Unidades — Pit Stop Admin{%
+endblock %} {% block page_title %}Unidades{% endblock %} {% block content %}
 <div style="margin-bottom: 1.5rem">
   <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0">
-    Gerencie os nomes, endereços e o controle em tempo real de lotação de cada
-    oficina.
+    Controle de disponibilidade das unidades operacionais. Bloqueie a entrada de
+    novas solicitações em caso de lotação ou encerramento das atividades.
   </p>
 </div>
 
@@ -47,13 +46,13 @@ endblock %} {% block content %}
         <span
           class="badge"
           style="background: rgba(16, 185, 129, 0.15); color: #34d399"
-          >LIVRE</span
+          >DISPONÍVEL</span
         >
         {% else %}
         <span
           class="badge"
           style="background: var(--danger-bg); color: var(--danger)"
-          >LOTADA</span
+          >BLOQUEADA</span
         >
         {% endif %}
       </div>
@@ -83,80 +82,9 @@ endblock %} {% block content %}
           {{ u.ordens_ativas_count }} OSs
         </span>
       </div>
-
-      <!-- Formulário de Edição Rápida (Colapsável) -->
-      <div
-        id="form-edit-{{ u.id }}"
-        style="
-          display: none;
-          background: var(--surface-2);
-          border: 1px solid var(--border-strong);
-          border-radius: var(--radius-md);
-          padding: 1rem;
-          margin-bottom: 1rem;
-        "
-      >
-        <form action="{% url 'painel:unidade_editar' u.id %}" method="post">
-          {% csrf_token %}
-          <div class="form-group" style="margin-bottom: 0.75rem">
-            <label class="form-label" style="font-size: 0.75rem"
-              >Nome da Unidade</label
-            >
-            <input
-              type="text"
-              name="nome"
-              value="{{ u.nome }}"
-              class="form-control"
-              style="font-size: 0.85rem; padding: 0.5rem 0.75rem"
-              required
-            />
-          </div>
-          <div class="form-group" style="margin-bottom: 0.75rem">
-            <label class="form-label" style="font-size: 0.75rem"
-              >Endereço Completo</label
-            >
-            <input
-              type="text"
-              name="endereco"
-              value="{{ u.endereco }}"
-              class="form-control"
-              style="font-size: 0.85rem; padding: 0.5rem 0.75rem"
-              required
-            />
-          </div>
-          <div style="display: flex; gap: 0.5rem; justify-content: flex-end">
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm"
-              onclick="toggleEdit('{{ u.id }}')"
-            >
-              Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary btn-sm">
-              Salvar Alterações
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
 
-    <div
-      style="
-        padding-top: 1rem;
-        border-top: 1px solid var(--border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      "
-    >
-      <button
-        type="button"
-        class="btn btn-secondary btn-sm"
-        onclick="toggleEdit('{{ u.id }}')"
-      >
-        ✏️ Editar Nome / Endereço
-      </button>
-
+    <div style="padding-top: 1rem; border-top: 1px solid var(--border)">
       <form
         action="{% url 'painel:unidade_toggle_capacidade' u.id %}"
         method="post"
@@ -164,18 +92,32 @@ endblock %} {% block content %}
         {% csrf_token %} {% if u.aceitando_pedidos %}
         <button
           type="submit"
-          class="btn btn-danger btn-sm"
-          title="Bloquear novas solicitações"
+          class="btn btn-danger btn-block"
+          style="
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+          "
+          title="Bloquear novas solicitações nesta unidade"
         >
-          🔒 Bloquear (Lotada)
+          🔒 Bloquear Unidade (Lotação / Encerramento)
         </button>
         {% else %}
         <button
           type="submit"
-          class="btn btn-primary btn-sm"
-          title="Liberar novas solicitações"
+          class="btn btn-primary btn-block"
+          style="
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+          "
+          title="Liberar entrada de novas solicitações nesta unidade"
         >
-          🔓 Liberar Entrada
+          🔓 Desbloquear Unidade (Liberar Entrada)
         </button>
         {% endif %}
       </form>
@@ -183,13 +125,4 @@ endblock %} {% block content %}
   </div>
   {% endfor %}
 </div>
-{% endblock %} {% block extra_js %}
-<script>
-  function toggleEdit(id) {
-    const el = document.getElementById(`form-edit-${id}`);
-    if (el) {
-      el.style.display = el.style.display === "none" ? "block" : "none";
-    }
-  }
-</script>
 {% endblock %}

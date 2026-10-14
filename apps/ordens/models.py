@@ -118,7 +118,9 @@ class OrdemServicoItem(models.Model):
     )
     servico = models.ForeignKey(
         Servico,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="itens_os",
         verbose_name="Serviço Contratado",
     )

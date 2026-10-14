@@ -17,5 +17,6 @@ urlpatterns = [
     path("servicos/novo/", views.servico_criar, name="servico_criar"),
     path("servicos/<int:pk>/editar/", views.servico_editar, name="servico_editar"),
     path("servicos/<int:pk>/toggle-ativo/", views.servico_toggle_ativo, name="servico_toggle_ativo"),
+    path("servicos/<int:pk>/excluir/", views.servico_excluir, name="servico_excluir"),
     path("clientes/", views.clientes_admin, name="clientes"),
 ]

@@ -1,7 +1,7 @@
 {% extends "base_painel.html" %}
 
-{% block title %}Catálogo de Serviços — Pit Stop Admin{% endblock %}
-{% block page_title %}Catálogo de Serviços & Tabela Base{% endblock %}
+{% block title %}Serviços — Pit Stop Admin{% endblock %}
+{% block page_title %}Catálogo de Serviços & Complementos{% endblock %}
 
 {% block topbar_actions %}
 <button type="button" id="btn-novo-servico" class="btn btn-primary btn-sm" onclick="abrirModalServico()">
@@ -12,7 +12,7 @@
 {% block extra_css %}
 <style>
     .servico-dialog {
-        width: min(560px, calc(100vw - 2rem));
+        width: min(580px, calc(100vw - 2rem));
         background: var(--surface-1);
         color: var(--text-primary);
         border: 1px solid var(--border-strong);
@@ -30,7 +30,7 @@
         display: flex; justify-content: space-between; align-items: center;
         padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--border);
     }
-    .servico-dialog__body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.9rem; }
+    .servico-dialog__body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.95rem; }
     .servico-dialog__footer {
         display: flex; justify-content: flex-end; gap: 0.5rem;
         padding: 1rem 1.25rem; border-top: 1px solid var(--border); background: var(--surface-2);
@@ -61,9 +61,13 @@
     }
     .tag-unidade--todas { background: var(--surface-3); color: var(--text-secondary); }
     .servicos-table th { padding: 0.85rem 1rem; color: var(--text-muted); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em; }
-    .servicos-table td { padding: 1rem; vertical-align: top; }
+    .servicos-table td { padding: 0.9rem 1rem; vertical-align: middle; }
     .servicos-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
     .servicos-table tbody tr:hover { background: var(--surface-2); }
+    .section-header-box {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 1rem 1.25rem; background: var(--surface-2); border-bottom: 1px solid var(--border);
+    }
     @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
@@ -71,89 +75,236 @@
 {% block content %}
 <div style="margin-bottom: 1.5rem;">
     <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
-        Serviços oferecidos aos clientes. O preço base é multiplicado conforme o porte do veículo (Pequeno 1.0x, Médio 1.3x, Grande 1.6x).
-        Cada serviço pode ser listado em todas as unidades ou apenas nas selecionadas.
+        Gerencie e separe os <strong>Serviços Principais</strong> (base da abertura do pedido) e os <strong>Complementos/SVAs</strong> (ofertados na seção "Complete seu pedido" estilo iFood). 
+        Você também pode excluir serviços descontinuados ou pausar sua oferta temporariamente.
     </p>
 </div>
 
-<div class="card" style="padding: 0; overflow-x: auto;">
-    <table class="servicos-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-        <thead>
-            <tr style="background: var(--surface-2); border-bottom: 1px solid var(--border);">
-                <th>SERVIÇO</th>
-                <th>UNIDADES</th>
-                <th>PREÇO BASE</th>
-                <th>MÉDIO (1.3x)</th>
-                <th>GRANDE (1.6x)</th>
-                <th>DURAÇÃO</th>
-                <th>STATUS</th>
-                <th style="text-align: right;">AÇÕES</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for s in servicos %}
-                <tr>
-                    <td>
-                        <div style="font-weight: 700; color: #fff;">{{ s.nome }}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">{{ s.descricao }}</div>
-                    </td>
-                    <td>
-                        {% for u in s.unidades.all %}
-                            <span class="tag-unidade">{{ u.nome }}</span>
-                        {% empty %}
-                            <span class="tag-unidade tag-unidade--todas">Todas</span>
-                        {% endfor %}
-                    </td>
-                    <td style="font-family: var(--font-display); font-weight: 700; color: #fff; white-space: nowrap;">
-                        R$ {{ s.preco_base }}
-                    </td>
-                    <td style="font-family: var(--font-display); color: var(--brand); white-space: nowrap;">
-                        R$ {{ s.preco_medio }}
-                    </td>
-                    <td style="font-family: var(--font-display); color: var(--accent); white-space: nowrap;">
-                        R$ {{ s.preco_grande }}
-                    </td>
-                    <td style="color: var(--text-secondary); white-space: nowrap;">
-                        ~{{ s.duracao_estimada_minutos }} min
-                    </td>
-                    <td>
-                        {% if s.is_ativo %}
-                            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">ATIVO</span>
-                        {% else %}
-                            <span class="badge" style="background: var(--surface-3); color: var(--text-muted);">INATIVO</span>
-                        {% endif %}
-                    </td>
-                    <td style="text-align: right; white-space: nowrap;">
-                        <button type="button" id="btn-editar-servico-{{ s.id }}" class="btn btn-secondary btn-sm"
-                                data-id="{{ s.id }}"
-                                data-nome="{{ s.nome }}"
-                                data-descricao="{{ s.descricao }}"
-                                data-preco="{{ s.preco_base|stringformat:'.2f' }}"
-                                data-duracao="{{ s.duracao_estimada_minutos }}"
-                                data-unidades="{% for u in s.unidades.all %}{{ u.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
-                                onclick="abrirModalServico(this)">
-                            ✏️ Editar
-                        </button>
-                        <form action="{% url 'painel:servico_toggle_ativo' s.id %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-secondary btn-sm">
-                                {% if s.is_ativo %}Pausar{% else %}Ativar{% endif %}
-                            </button>
-                        </form>
-                    </td>
+<!-- ==========================================
+     1. TABELA DE SERVIÇOS PRINCIPAIS
+     ========================================== -->
+<div class="card" style="padding: 0; margin-bottom: 2rem; overflow: hidden;">
+    <div class="section-header-box">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="font-size: 1.25rem;">⭐</span>
+                <h3 style="font-size: 1.1rem; color: #fff; margin: 0; font-weight: 700;">Serviços Principais</h3>
+                <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: var(--brand); font-weight: 700;">
+                    {{ servicos_principais|length }} cadastrado(s)
+                </span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+                O cliente obrigatoriamente escolhe 1 serviço principal na abertura da solicitação.
+            </p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalServico(null, 'principal')">
+            ＋ Novo Principal
+        </button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="servicos-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--border);">
+                    <th>SERVIÇO</th>
+                    <th>UNIDADES</th>
+                    <th>PREÇO BASE</th>
+                    <th>MÉDIO (1.3x)</th>
+                    <th>GRANDE (1.6x)</th>
+                    <th>DURAÇÃO</th>
+                    <th>STATUS</th>
+                    <th style="text-align: right;">AÇÕES</th>
                 </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
-                        Nenhum serviço cadastrado ainda. Clique em <strong>＋ Adicionar novo serviço</strong>.
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for s in servicos_principais %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 700; color: #fff;">{{ s.nome }}</div>
+                            {% if s.descricao %}
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">{{ s.descricao }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for u in s.unidades.all %}
+                                <span class="tag-unidade">{{ u.nome }}</span>
+                            {% empty %}
+                                <span class="tag-unidade tag-unidade--todas">Todas</span>
+                            {% endfor %}
+                        </td>
+                        <td style="font-family: var(--font-display); font-weight: 700; color: #fff; white-space: nowrap;">
+                            R$ {{ s.preco_base }}
+                        </td>
+                        <td style="font-family: var(--font-display); color: var(--brand); white-space: nowrap;">
+                            R$ {{ s.preco_medio }}
+                        </td>
+                        <td style="font-family: var(--font-display); color: var(--accent); white-space: nowrap;">
+                            R$ {{ s.preco_grande }}
+                        </td>
+                        <td style="color: var(--text-secondary); white-space: nowrap;">
+                            ~{{ s.duracao_estimada_minutos }} min
+                        </td>
+                        <td>
+                            {% if s.is_ativo %}
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">ATIVO</span>
+                            {% else %}
+                                <span class="badge" style="background: var(--surface-3); color: var(--text-muted);">PAUSADO</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        data-id="{{ s.id }}"
+                                        data-nome="{{ s.nome }}"
+                                        data-tipo="{{ s.tipo }}"
+                                        data-descricao="{{ s.descricao }}"
+                                        data-preco="{{ s.preco_base|stringformat:'.2f' }}"
+                                        data-duracao="{{ s.duracao_estimada_minutos }}"
+                                        data-unidades="{% for u in s.unidades.all %}{{ u.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                        onclick="abrirModalServico(this)">
+                                    ✏️ Editar
+                                </button>
+                                <form action="{% url 'painel:servico_toggle_ativo' s.id %}" method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-secondary btn-sm" title="Alternar status ativo/inativo">
+                                        {% if s.is_ativo %}Pausar{% else %}Ativar{% endif %}
+                                    </button>
+                                </form>
+                                <form action="{% url 'painel:servico_excluir' s.id %}" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir o serviço \'{{ s.nome|escapejs }}\'? Esta ação não pode ser desfeita.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Excluir serviço permanentemente">
+                                        🗑️ Excluir
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                            Nenhum serviço principal cadastrado ainda. Clique em <strong>＋ Novo Principal</strong>.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<!-- Modal Criar / Editar Serviço -->
+<!-- ==========================================
+     2. TABELA DE COMPLEMENTOS / SVAs
+     ========================================== -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="section-header-box">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="font-size: 1.25rem;">🍟</span>
+                <h3 style="font-size: 1.1rem; color: #fff; margin: 0; font-weight: 700;">Complementos & SVAs (Adicionais)</h3>
+                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 700;">
+                    {{ servicos_complementos|length }} cadastrado(s)
+                </span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+                Ofertados na seção "Complete seu pedido" estilo iFood como serviços opcionais para aumentar o ticket médio.
+            </p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalServico(null, 'complemento')">
+            ＋ Novo Complemento
+        </button>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="servicos-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--border);">
+                    <th>COMPLEMENTO</th>
+                    <th>UNIDADES</th>
+                    <th>PREÇO BASE</th>
+                    <th>MÉDIO (1.3x)</th>
+                    <th>GRANDE (1.6x)</th>
+                    <th>DURAÇÃO</th>
+                    <th>STATUS</th>
+                    <th style="text-align: right;">AÇÕES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in servicos_complementos %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 700; color: #fff;">{{ s.nome }}</div>
+                            {% if s.descricao %}
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">{{ s.descricao }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for u in s.unidades.all %}
+                                <span class="tag-unidade">{{ u.nome }}</span>
+                            {% empty %}
+                                <span class="tag-unidade tag-unidade--todas">Todas</span>
+                            {% endfor %}
+                        </td>
+                        <td style="font-family: var(--font-display); font-weight: 700; color: #fff; white-space: nowrap;">
+                            R$ {{ s.preco_base }}
+                        </td>
+                        <td style="font-family: var(--font-display); color: var(--brand); white-space: nowrap;">
+                            R$ {{ s.preco_medio }}
+                        </td>
+                        <td style="font-family: var(--font-display); color: var(--accent); white-space: nowrap;">
+                            R$ {{ s.preco_grande }}
+                        </td>
+                        <td style="color: var(--text-secondary); white-space: nowrap;">
+                            ~{{ s.duracao_estimada_minutos }} min
+                        </td>
+                        <td>
+                            {% if s.is_ativo %}
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">ATIVO</span>
+                            {% else %}
+                                <span class="badge" style="background: var(--surface-3); color: var(--text-muted);">PAUSADO</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                        data-id="{{ s.id }}"
+                                        data-nome="{{ s.nome }}"
+                                        data-tipo="{{ s.tipo }}"
+                                        data-descricao="{{ s.descricao }}"
+                                        data-preco="{{ s.preco_base|stringformat:'.2f' }}"
+                                        data-duracao="{{ s.duracao_estimada_minutos }}"
+                                        data-unidades="{% for u in s.unidades.all %}{{ u.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                        onclick="abrirModalServico(this)">
+                                    ✏️ Editar
+                                </button>
+                                <form action="{% url 'painel:servico_toggle_ativo' s.id %}" method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-secondary btn-sm" title="Alternar status ativo/inativo">
+                                        {% if s.is_ativo %}Pausar{% else %}Ativar{% endif %}
+                                    </button>
+                                </form>
+                                <form action="{% url 'painel:servico_excluir' s.id %}" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir o complemento \'{{ s.nome|escapejs }}\'? Esta ação não pode ser desfeita.');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Excluir complemento permanentemente">
+                                        🗑️ Excluir
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                            Nenhum complemento/SVA cadastrado ainda. Clique em <strong>＋ Novo Complemento</strong>.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==========================================
+     MODAL CRIAR / EDITAR SERVIÇO
+     ========================================== -->
 <dialog id="modal-servico" class="servico-dialog">
     <form id="form-servico" method="post" action="{% url 'painel:servico_criar' %}"
           data-url-criar="{% url 'painel:servico_criar' %}"
@@ -165,19 +316,40 @@
         </div>
 
         <div class="servico-dialog__body">
+            <!-- SELEÇÃO DE TIPO: PRINCIPAL OU COMPLEMENTO -->
             <div class="form-group">
-                <label class="form-label" for="servico-nome">Nome</label>
-                <input type="text" id="servico-nome" name="nome" class="form-control" maxlength="120" required placeholder="Ex: Lanternagem">
+                <label class="form-label">Tipo do Serviço</label>
+                <div class="grid-2">
+                    <label class="card card-hover" style="cursor: pointer; padding: 0.75rem; display: flex; align-items: center; gap: 0.6rem; border: 1px solid var(--border-strong); background: var(--surface-2);">
+                        <input type="radio" name="tipo" value="principal" id="tipo-principal" checked style="accent-color: var(--brand); transform: scale(1.15);">
+                        <div>
+                            <strong style="color: #fff; font-size: 0.88rem; display: block;">⭐ Serviço Principal</strong>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Base da Ordem de Serviço</span>
+                        </div>
+                    </label>
+                    <label class="card card-hover" style="cursor: pointer; padding: 0.75rem; display: flex; align-items: center; gap: 0.6rem; border: 1px solid var(--border-strong); background: var(--surface-2);">
+                        <input type="radio" name="tipo" value="complemento" id="tipo-complemento" style="accent-color: var(--brand); transform: scale(1.15);">
+                        <div>
+                            <strong style="color: #fff; font-size: 0.88rem; display: block;">🍟 Complemento / SVA</strong>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Adicional no checkout</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="servico-nome">Nome do Serviço</label>
+                <input type="text" id="servico-nome" name="nome" class="form-control" maxlength="120" required placeholder="Ex: Lavagem Completa ou Enceramento">
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="servico-descricao">Descrição</label>
-                <textarea id="servico-descricao" name="descricao" rows="3" class="form-textarea" placeholder="O que está incluso no serviço"></textarea>
+                <textarea id="servico-descricao" name="descricao" rows="2" class="form-textarea" placeholder="O que está incluso no serviço"></textarea>
             </div>
 
             <div class="grid-2">
                 <div class="form-group">
-                    <label class="form-label" for="servico-preco">Preço base (R$)</label>
+                    <label class="form-label" for="servico-preco">Preço base (R$ - Pequeno)</label>
                     <input type="number" id="servico-preco" name="preco_base" class="form-control" min="0" step="0.01" required placeholder="0,00">
                 </div>
                 <div class="form-group">
@@ -187,12 +359,12 @@
             </div>
 
             <div class="form-group unidades-wrap" id="unidades-wrap">
-                <label class="form-label">Unidades onde o serviço é listado</label>
+                <label class="form-label">Unidades onde o serviço é oferecido</label>
                 <label class="toggle-todas">
                     <input type="checkbox" id="servico-todas-unidades" name="todas_unidades" onchange="atualizarEstadoUnidades()" checked>
                     <span>
                         <strong style="color: #fff;">Todas as unidades</strong>
-                        <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">Inclui unidades cadastradas no futuro</span>
+                        <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">Disponível em qualquer filial</span>
                     </span>
                 </label>
                 <div class="unidade-chips">
@@ -226,7 +398,7 @@ function atualizarEstadoUnidades() {
     document.getElementById("unidades-wrap").classList.toggle("is-disabled", todas);
 }
 
-function abrirModalServico(btn) {
+function abrirModalServico(btn, tipoPadrao = "principal") {
     formServico.reset();
     const editando = !!btn;
     const unidadesSel = editando && btn.dataset.unidades ? btn.dataset.unidades.split(",") : [];
@@ -235,6 +407,16 @@ function abrirModalServico(btn) {
     formServico.action = editando
         ? formServico.dataset.urlEditar.replace("/0/", `/${btn.dataset.id}/`)
         : formServico.dataset.urlCriar;
+
+    // Tipo do serviço
+    const tipo = editando ? (btn.dataset.tipo || "principal") : tipoPadrao;
+    const rPrincipal = document.getElementById("tipo-principal");
+    const rComplemento = document.getElementById("tipo-complemento");
+    if (tipo === "complemento") {
+        if (rComplemento) rComplemento.checked = true;
+    } else {
+        if (rPrincipal) rPrincipal.checked = true;
+    }
 
     document.getElementById("servico-nome").value = editando ? btn.dataset.nome : "";
     document.getElementById("servico-descricao").value = editando ? btn.dataset.descricao : "";
@@ -255,7 +437,6 @@ function fecharModalServico() {
     modalServico.close();
 }
 
-// Fecha ao clicar fora do conteúdo
 modalServico.addEventListener("click", (e) => {
     if (e.target === modalServico) fecharModalServico();
 });

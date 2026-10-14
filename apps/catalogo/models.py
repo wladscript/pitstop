@@ -20,7 +20,21 @@ class ServicoQuerySet(models.QuerySet):
 
 
 class Servico(models.Model):
+    TIPO_PRINCIPAL = "principal"
+    TIPO_COMPLEMENTO = "complemento"
+    TIPO_CHOICES = [
+        (TIPO_PRINCIPAL, "Serviço Principal"),
+        (TIPO_COMPLEMENTO, "Complemento / SVA"),
+    ]
+
     nome = models.CharField("Nome do Serviço", max_length=120)
+    tipo = models.CharField(
+        "Tipo do Serviço",
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default=TIPO_PRINCIPAL,
+        db_index=True,
+    )
     descricao = models.TextField("Descrição detalhada", blank=True)
     preco_base = models.DecimalField(
         "Preço Base (R$)",

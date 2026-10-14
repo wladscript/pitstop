@@ -73,6 +73,7 @@ def nova_ordem(request):
         {
             "id": s.id,
             "nome": s.nome,
+            "tipo": s.tipo,
             "descricao": s.descricao,
             "preco_base": float(s.preco_base),
             "duracao": s.duracao_estimada_minutos,

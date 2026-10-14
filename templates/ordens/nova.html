@@ -4,12 +4,12 @@
 
 {% block content %}
 <div style="margin-bottom: 1.5rem;">
-    <a href="{% url 'ordens:lista' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">
+    <a href="{% url 'ordens:lista' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; text-decoration: none;">
         <svg width="16" height="16" stroke="currentColor"><use href="#icon-arrow-left"></use></svg>
         <span>Voltar</span>
     </a>
     <h1 style="font-size: 1.5rem; margin-bottom: 0.2rem;">NOVO AGENDAMENTO</h1>
-    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Configure os serviços para seu veículo em 4 passos</p>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Configure os serviços para seu veículo em 4 passos simples</p>
 </div>
 
 <!-- Stepper Visual -->
@@ -86,37 +86,96 @@
 
     <!-- ETAPA 3: SERVIÇOS -->
     <div class="wizard-step" id="step-3" style="display: none;">
-        <h2 style="font-size: 1.15rem; margin-bottom: 0.5rem;">3. Selecione os Serviços</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Valores ajustados para o porte do seu veículo.</p>
+        <div style="margin-bottom: 1.25rem;">
+            <h2 style="font-size: 1.15rem; margin-bottom: 0.25rem;">3. Selecione o Serviço Principal</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Escolha 1 serviço principal. Os valores são ajustados para a categoria do seu veículo.</p>
+        </div>
 
+        <!-- Lista de Serviços Principais (Exclusão mútua / Radio) -->
         <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;" id="servicos-container">
             {% for s in servicos %}
-                <label class="card card-hover selectable-card servico-card" data-servico-id="{{ s.id }}" style="cursor: pointer; padding: 1rem; display: flex; align-items: flex-start; justify-content: space-between;">
-                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
-                        <input type="checkbox" name="servico_ids" value="{{ s.id }}" data-preco-base="{{ s.preco_base|stringformat:'.2f' }}" onchange="recalcularTotal()" style="accent-color: var(--brand); transform: scale(1.3); margin-top: 4px;">
+                {% if s.tipo == 'principal' %}
+                <label class="card card-hover selectable-card servico-card servico-principal-card" data-servico-id="{{ s.id }}" id="servico-card-{{ s.id }}" style="cursor: pointer; padding: 1rem; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
+                    <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+                        <input type="radio" name="servico_principal_radio" value="{{ s.id }}" data-preco-base="{{ s.preco_base|stringformat:'.2f' }}" data-duracao="{{ s.duracao_estimada_minutos }}" onchange="selecionarServicoPrincipal({{ s.id }})" style="accent-color: var(--brand); transform: scale(1.3); margin-top: 4px;">
                         <div>
-                            <div style="font-family: var(--font-display); font-size: 1.1rem; color: #fff;">{{ s.nome }}</div>
-                            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem;">{{ s.descricao }}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">⏱ ~{{ s.duracao_estimada_minutos }} min</div>
+                            <div style="font-family: var(--font-display); font-size: 1.1rem; color: #fff; font-weight: 600;">{{ s.nome }}</div>
+                            {% if s.descricao %}
+                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.15rem; line-height: 1.35;">{{ s.descricao }}</div>
+                            {% endif %}
                         </div>
                     </div>
-                    <div style="text-align: right; min-width: 90px;">
-                        <div class="servico-preco-display" data-servico-id="{{ s.id }}" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--brand);">
+                    <!-- Preço e tempo estimado logo abaixo para layout mais clean -->
+                    <div style="text-align: right; min-width: 95px; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+                        <div class="servico-preco-display" data-servico-id="{{ s.id }}" style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--brand); line-height: 1.2;">
                             R$ {{ s.preco_base }}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <span>~{{ s.duracao_estimada_minutos }} min</span>
                         </div>
                     </div>
                 </label>
+                {% endif %}
             {% endfor %}
             <div id="servicos-vazio" class="card" style="display: none; padding: 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
-                Nenhum serviço disponível nesta unidade no momento.
+                Nenhum serviço principal disponível nesta unidade no momento.
             </div>
         </div>
 
-        <!-- Resumo flutuante do valor nesta etapa -->
+        <!-- SEÇÃO: COMPLETE SEU PEDIDO (Estilo iFood / SVAs Adicionais) -->
+        <div id="secao-adicionais" style="display: none; margin-bottom: 1.5rem; background: var(--surface-1); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 1.15rem;">
+            <div style="margin-bottom: 0.85rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.25rem;">🍟</span>
+                        <span style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: #fff;">Complete seu pedido</span>
+                    </div>
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 0.7rem; font-weight: 600;">OPCIONAL</span>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+                    Que tal aproveitar a visita e complementar com serviços adicionais?
+                </p>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.65rem;" id="adicionais-container">
+                {% for s in servicos %}
+                    {% if s.tipo == 'complemento' %}
+                    <label class="card card-hover selectable-card servico-adicional-card" data-adicional-id="{{ s.id }}" id="adicional-card-{{ s.id }}" style="cursor: pointer; padding: 0.85rem 1rem; display: none; align-items: center; justify-content: space-between; background: var(--surface-2); border-color: var(--border); transition: all 0.2s ease;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.85rem;">
+                            <input type="checkbox" name="servico_adicional_chk" value="{{ s.id }}" data-preco-base="{{ s.preco_base|stringformat:'.2f' }}" data-duracao="{{ s.duracao_estimada_minutos }}" onchange="alternarAdicional({{ s.id }})" style="accent-color: var(--brand); transform: scale(1.25); margin-top: 3px;">
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.95rem; color: #fff;">{{ s.nome }}</div>
+                                {% if s.descricao %}
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem; line-height: 1.3;">{{ s.descricao }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Preço e tempo estimado logo abaixo -->
+                        <div style="text-align: right; min-width: 95px; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;">
+                            <div class="adicional-preco-display" data-servico-id="{{ s.id }}" style="font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--brand); line-height: 1.2;">
+                                + R$ {{ s.preco_base }}
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem; display: flex; align-items: center; gap: 0.2rem;">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <span>~{{ s.duracao_estimada_minutos }} min</span>
+                            </div>
+                        </div>
+                    </label>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Inputs ocultos que garantem o envio exato dos IDs selecionados no POST -->
+        <div id="hidden-servicos-container"></div>
+
+        <!-- Resumo flutuante do valor e tempo nesta etapa -->
         <div class="card" style="margin-bottom: 1.5rem; background: var(--surface-2); border-color: var(--brand); display: flex; align-items: center; justify-content: space-between; padding: 1rem;">
             <div>
                 <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Subtotal Estimado</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary);" id="servicos-selecionados-count">0 serviços selecionados</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.1rem;" id="servicos-selecionados-count">Nenhum serviço selecionado</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;" id="tempo-estimado-total">⏱ Tempo total: 0 min</div>
             </div>
             <div style="font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: #fff;" id="subtotal-display">
                 R$ 0,00
@@ -171,17 +230,19 @@
             </div>
         </div>
 
-        <!-- Resumo Final -->
+        <!-- Resumo Final do Pedido -->
         <div class="card" style="margin-bottom: 1.5rem; background: var(--surface-1); border: 2px solid var(--brand); padding: 1.25rem;">
             <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem;">
                 Resumo do Pedido
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
                 <div>
-                    <div style="font-size: 0.9rem; color: var(--text-secondary);" id="resumo-veiculo">-</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);" id="resumo-unidade">-</div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #fff;" id="resumo-veiculo">-</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.15rem;" id="resumo-unidade">-</div>
+                    <div style="font-size: 0.82rem; color: var(--brand); margin-top: 0.4rem; line-height: 1.3;" id="resumo-servicos-lista">-</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;" id="resumo-tempo-total">-</div>
                 </div>
-                <div style="text-align: right;">
+                <div style="text-align: right; min-width: 110px;">
                     <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total</div>
                     <div style="font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--brand);" id="resumo-total">
                         R$ 0,00
@@ -212,11 +273,18 @@ const MULTIPLICADORES = {
 };
 
 let currentStep = 1;
+let servicoPrincipalId = null;
+const servicosAdicionaisIds = new Set();
 
 function getCategoriaSelecionada() {
     const radio = document.querySelector('input[name="veiculo_id"]:checked');
     if (!radio) return "Médio";
     return radio.getAttribute("data-categoria") || "Médio";
+}
+
+function getUnidadeSelecionadaId() {
+    const radio = document.querySelector('input[name="unidade_id"]:checked');
+    return radio ? parseInt(radio.value) : null;
 }
 
 function recalcularPrecosServicos() {
@@ -225,18 +293,20 @@ function recalcularPrecosServicos() {
 
     servicosData.forEach(s => {
         const precoCalculado = (s.preco_base * mult).toFixed(2);
-        const el = document.querySelector(`.servico-preco-display[data-servico-id="${s.id}"]`);
-        if (el) {
-            el.innerText = `R$ ${precoCalculado.replace(".", ",")}`;
+        const precoFormatado = `R$ ${precoCalculado.replace(".", ",")}`;
+        
+        const elPrincipal = document.querySelector(`.servico-preco-display[data-servico-id="${s.id}"]`);
+        if (elPrincipal) {
+            elPrincipal.innerText = precoFormatado;
+        }
+
+        const elAdicional = document.querySelector(`.adicional-preco-display[data-servico-id="${s.id}"]`);
+        if (elAdicional) {
+            elAdicional.innerText = `+ ${precoFormatado}`;
         }
     });
 
     recalcularTotal();
-}
-
-function getUnidadeSelecionadaId() {
-    const radio = document.querySelector('input[name="unidade_id"]:checked');
-    return radio ? parseInt(radio.value) : null;
 }
 
 function filtrarServicosPorUnidade() {
@@ -244,45 +314,193 @@ function filtrarServicosPorUnidade() {
     let visiveis = 0;
 
     servicosData.forEach(s => {
+        if (s.tipo !== "principal") return;
         // Lista vazia = disponível em todas as unidades
         const disponivel = !s.unidades.length || (unidadeId !== null && s.unidades.includes(unidadeId));
-        const card = document.querySelector(`.servico-card[data-servico-id="${s.id}"]`);
+        const card = document.getElementById(`servico-card-${s.id}`);
         if (!card) return;
+        
         card.style.display = disponivel ? "flex" : "none";
         if (!disponivel) {
-            const chk = card.querySelector('input[name="servico_ids"]');
-            if (chk) chk.checked = false;
+            const radio = card.querySelector('input[name="servico_principal_radio"]');
+            if (radio && radio.checked) {
+                radio.checked = false;
+                servicoPrincipalId = null;
+            }
         } else {
             visiveis++;
         }
     });
 
-    document.getElementById("servicos-vazio").style.display = visiveis ? "none" : "block";
+    const vazioEl = document.getElementById("servicos-vazio");
+    if (vazioEl) vazioEl.style.display = visiveis ? "none" : "block";
+
+    atualizarVisibilidadeAdicionais();
+}
+
+function selecionarServicoPrincipal(id) {
+    servicoPrincipalId = id;
+
+    // Se o serviço marcado como principal já estava nos adicionais, desmarca dele
+    if (servicosAdicionaisIds.has(id)) {
+        servicosAdicionaisIds.delete(id);
+        const chk = document.querySelector(`input[name="servico_adicional_chk"][value="${id}"]`);
+        if (chk) chk.checked = false;
+    }
+
+    // Atualiza destaque visual dos cards de serviço principal
+    document.querySelectorAll('.servico-principal-card').forEach(card => {
+        const cardId = parseInt(card.getAttribute('data-servico-id'));
+        if (cardId === id) {
+            card.style.borderColor = 'var(--brand)';
+            card.style.background = 'rgba(59, 130, 246, 0.08)';
+        } else {
+            card.style.borderColor = 'var(--border)';
+            card.style.background = 'var(--surface-1)';
+        }
+    });
+
+    // Atualiza lista de serviços adicionais ofertados no "Complete seu pedido"
+    atualizarVisibilidadeAdicionais();
+
+    // Recalcula totais
+    recalcularTotal();
+}
+
+function alternarAdicional(id) {
+    const chk = document.querySelector(`input[name="servico_adicional_chk"][value="${id}"]`);
+    const card = document.getElementById(`adicional-card-${id}`);
+
+    if (chk && chk.checked) {
+        servicosAdicionaisIds.add(id);
+        if (card) {
+            card.style.borderColor = 'var(--brand)';
+            card.style.background = 'rgba(59, 130, 246, 0.06)';
+        }
+    } else {
+        servicosAdicionaisIds.delete(id);
+        if (card) {
+            card.style.borderColor = 'var(--border)';
+            card.style.background = 'var(--surface-2)';
+        }
+    }
+
+    recalcularTotal();
+}
+
+function atualizarVisibilidadeAdicionais() {
+    const unidadeId = getUnidadeSelecionadaId();
+    let visiveis = 0;
+
+    servicosData.forEach(s => {
+        if (s.tipo !== "complemento") return;
+        const disponivel = !s.unidades.length || (unidadeId !== null && s.unidades.includes(unidadeId));
+        const cardAdicional = document.getElementById(`adicional-card-${s.id}`);
+        if (!cardAdicional) return;
+
+        if (disponivel) {
+            cardAdicional.style.display = "flex";
+            visiveis++;
+        } else {
+            cardAdicional.style.display = "none";
+            if (servicosAdicionaisIds.has(s.id)) {
+                servicosAdicionaisIds.delete(s.id);
+                const chk = cardAdicional.querySelector('input[type="checkbox"]');
+                if (chk) chk.checked = false;
+                cardAdicional.style.borderColor = 'var(--border)';
+                cardAdicional.style.background = 'var(--surface-2)';
+            }
+        }
+    });
+
+    const secaoAdicionais = document.getElementById("secao-adicionais");
+    if (secaoAdicionais) {
+        // Só exibe "Complete seu pedido" se houver um serviço principal escolhido e houver complementos disponíveis
+        secaoAdicionais.style.display = (servicoPrincipalId && visiveis > 0) ? "block" : "none";
+    }
+}
+
+function sincronizarHiddenInputs() {
+    const container = document.getElementById("hidden-servicos-container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (servicoPrincipalId) {
+        const inputP = document.createElement("input");
+        inputP.type = "hidden";
+        inputP.name = "servico_ids";
+        inputP.value = servicoPrincipalId;
+        container.appendChild(inputP);
+    }
+
+    servicosAdicionaisIds.forEach(id => {
+        const inputA = document.createElement("input");
+        inputA.type = "hidden";
+        inputA.name = "servico_ids";
+        inputA.value = id;
+        container.appendChild(inputA);
+    });
 }
 
 function recalcularTotal() {
     const categoria = getCategoriaSelecionada();
     const mult = MULTIPLICADORES[categoria] || 1.0;
 
-    const checks = document.querySelectorAll('input[name="servico_ids"]:checked');
     let total = 0;
+    let duracaoTotal = 0;
+    const nomesSelecionados = [];
 
-    checks.forEach(chk => {
-        const servId = parseInt(chk.value);
-        const serv = servicosData.find(s => s.id === servId);
-        if (serv) {
-            total += (serv.preco_base * mult);
+    if (servicoPrincipalId) {
+        const servP = servicosData.find(s => s.id === servicoPrincipalId);
+        if (servP) {
+            total += (servP.preco_base * mult);
+            duracaoTotal += (servP.duracao || 0);
+            nomesSelecionados.push(servP.nome);
+        }
+    }
+
+    servicosAdicionaisIds.forEach(id => {
+        const servA = servicosData.find(s => s.id === id);
+        if (servA) {
+            total += (servA.preco_base * mult);
+            duracaoTotal += (servA.duracao || 0);
+            nomesSelecionados.push(`+ ${servA.nome}`);
         }
     });
 
+    sincronizarHiddenInputs();
+
     const totalFormatado = `R$ ${total.toFixed(2).replace(".", ",")}`;
-    document.getElementById("subtotal-display").innerText = totalFormatado;
-    document.getElementById("resumo-total").innerText = totalFormatado;
-    document.getElementById("servicos-selecionados-count").innerText = `${checks.length} serviço(s) selecionado(s)`;
+    const subtotalEl = document.getElementById("subtotal-display");
+    const resumoTotalEl = document.getElementById("resumo-total");
+    if (subtotalEl) subtotalEl.innerText = totalFormatado;
+    if (resumoTotalEl) resumoTotalEl.innerText = totalFormatado;
+
+    const countEl = document.getElementById("servicos-selecionados-count");
+    const tempoEl = document.getElementById("tempo-estimado-total");
+
+    if (!servicoPrincipalId) {
+        if (countEl) countEl.innerText = "Nenhum serviço selecionado";
+        if (tempoEl) tempoEl.innerText = "⏱ Tempo total: 0 min";
+    } else {
+        const qtdAdicionais = servicosAdicionaisIds.size;
+        const textoAdicionais = qtdAdicionais > 0 ? ` (+ ${qtdAdicionais} adicional${qtdAdicionais > 1 ? 'is' : ''})` : '';
+        if (countEl) countEl.innerText = `1 serviço principal${textoAdicionais}`;
+        if (tempoEl) tempoEl.innerText = `⏱ Tempo total estimado: ~${duracaoTotal} min`;
+    }
+
+    // Atualiza resumo final (Passo 4)
+    const resumoServicosEl = document.getElementById("resumo-servicos-lista");
+    if (resumoServicosEl) {
+        resumoServicosEl.innerText = nomesSelecionados.length > 0 ? nomesSelecionados.join(", ") : "-";
+    }
+    const resumoTempoEl = document.getElementById("resumo-tempo-total");
+    if (resumoTempoEl) {
+        resumoTempoEl.innerText = duracaoTotal > 0 ? `⏱ Duração estimada total: ~${duracaoTotal} min` : "";
+    }
 }
 
 function goToStep(step) {
-    // Esconde todos os passos
     for (let i = 1; i <= 4; i++) {
         const stepEl = document.getElementById(`step-${i}`);
         const nodeEl = document.getElementById(`step-node-${i}`);
@@ -305,11 +523,15 @@ function goToStep(step) {
 }
 
 function validarServicosEAvancar() {
-    const checks = document.querySelectorAll('input[name="servico_ids"]:checked');
-    if (checks.length === 0) {
-        showToast("Selecione pelo menos um serviço para continuar.", "warning");
+    if (!servicoPrincipalId) {
+        if (typeof showToast === "function") {
+            showToast("Por favor, selecione um serviço principal para continuar.", "warning");
+        } else {
+            alert("Por favor, selecione um serviço principal para continuar.");
+        }
         return;
     }
+    sincronizarHiddenInputs();
     goToStep(4);
 }
 
@@ -343,7 +565,7 @@ function atualizarResumoFinal() {
 
     if (radioU) {
         const cardU = radioU.closest("label");
-        const nomeU = cardU ? cardU.querySelector(".font-display").innerText : "";
+        const nomeU = cardU ? cardU.querySelector(".font-display, div, span").innerText.trim() : "";
         document.getElementById("resumo-unidade").innerText = nomeU;
     }
 
@@ -354,6 +576,22 @@ document.addEventListener("DOMContentLoaded", () => {
     // Monitora mudança de veículo para atualizar os preços dinamicamente
     const radiosV = document.querySelectorAll('input[name="veiculo_id"]');
     radiosV.forEach(r => r.addEventListener("change", recalcularPrecosServicos));
+
+    // Validação extra no envio do formulário
+    const form = document.getElementById("form-wizard");
+    if (form) {
+        form.addEventListener("submit", (e) => {
+            if (!servicoPrincipalId) {
+                e.preventDefault();
+                goToStep(3);
+                if (typeof showToast === "function") {
+                    showToast("Por favor, selecione um serviço principal para continuar.", "warning");
+                }
+                return false;
+            }
+            sincronizarHiddenInputs();
+        });
+    }
 });
 </script>
 {% endblock %}

@@ -17,22 +17,22 @@
         <nav class="admin-nav">
             <a href="{% url 'painel:kanban' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'kanban' or request.resolver_match.url_name == 'os_detalhe' %}active{% endif %}">
                 <svg width="18" height="18" stroke="currentColor"><use href="#icon-kanban"></use></svg>
-                <span>Kanban de OS</span>
+                <span>Operações</span>
             </a>
 
             <a href="{% url 'painel:unidades' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'unidades' %}active{% endif %}">
                 <svg width="18" height="18" stroke="currentColor"><use href="#icon-map-pin"></use></svg>
-                <span>Unidades & Lotação</span>
+                <span>Unidades</span>
             </a>
 
             <a href="{% url 'painel:servicos' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'servicos' %}active{% endif %}">
                 <svg width="18" height="18" stroke="currentColor"><use href="#icon-wrench"></use></svg>
-                <span>Catálogo de Serviços</span>
+                <span>Serviços</span>
             </a>
 
             <a href="{% url 'painel:clientes' %}" class="admin-nav-item {% if request.resolver_match.url_name == 'clientes' %}active{% endif %}">
                 <svg width="18" height="18" stroke="currentColor"><use href="#icon-user"></use></svg>
-                <span>Clientes Cadastrados</span>
+                <span>Clientes</span>
             </a>
         </nav>
 

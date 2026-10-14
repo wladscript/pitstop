@@ -196,8 +196,19 @@ def unidade_editar(request, pk):
 @admin_required
 def servicos_admin(request):
     servicos = Servico.objects.prefetch_related("unidades").order_by("ordem_exibicao", "nome")
+    servicos_principais = [s for s in servicos if s.tipo == Servico.TIPO_PRINCIPAL]
+    servicos_complementos = [s for s in servicos if s.tipo == Servico.TIPO_COMPLEMENTO]
     unidades = Unidade.objects.all()
-    return render(request, "painel/servicos.html", {"servicos": servicos, "unidades": unidades})
+    return render(
+        request,
+        "painel/servicos.html",
+        {
+            "servicos": servicos,
+            "servicos_principais": servicos_principais,
+            "servicos_complementos": servicos_complementos,
+            "unidades": unidades,
+        },
+    )
 
 
 def _parse_servico_form(post):
@@ -205,6 +216,9 @@ def _parse_servico_form(post):
     erros = []
     nome = post.get("nome", "").strip()
     descricao = post.get("descricao", "").strip()
+    tipo = post.get("tipo", Servico.TIPO_PRINCIPAL).strip()
+    if tipo not in [Servico.TIPO_PRINCIPAL, Servico.TIPO_COMPLEMENTO]:
+        tipo = Servico.TIPO_PRINCIPAL
 
     if not nome:
         erros.append("O nome do serviço é obrigatório.")
@@ -235,6 +249,7 @@ def _parse_servico_form(post):
 
     dados = {
         "nome": nome,
+        "tipo": tipo,
         "descricao": descricao,
         "preco_base": preco_base,
         "duracao_estimada_minutos": duracao,
@@ -289,6 +304,16 @@ def servico_toggle_ativo(request, pk):
         servico.save()
         status_str = "Ativado" if servico.is_ativo else "Desativado"
         messages.success(request, f"Serviço '{servico.nome}': {status_str}.")
+    return redirect("painel:servicos")
+
+
+@admin_required
+def servico_excluir(request, pk):
+    if request.method == "POST":
+        servico = get_object_or_404(Servico, pk=pk)
+        nome = servico.nome
+        servico.delete()
+        messages.success(request, f"Serviço '{nome}' excluído com sucesso do catálogo.")
     return redirect("painel:servicos")
 
 
